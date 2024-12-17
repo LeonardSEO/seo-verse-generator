@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { GeneratorState } from '../lib/types';
 import { WebsiteAnalysis } from './WebsiteAnalysis';
+import { KeywordAnalysis } from './KeywordAnalysis';
 
 export default function AIGenerator() {
   const [state, setState] = useState<GeneratorState>({
@@ -80,6 +81,9 @@ export default function AIGenerator() {
         <div className="bg-white/70 backdrop-blur-lg rounded-xl p-8 shadow-xl animate-fadeIn border border-white/30">
           {state.currentStep === 'website' && (
             <WebsiteAnalysis state={state} updateState={updateState} />
+          )}
+          {state.currentStep === 'keyword' && (
+            <KeywordAnalysis state={state} updateState={updateState} />
           )}
         </div>
       </div>
