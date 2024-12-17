@@ -5,6 +5,18 @@ export interface BusinessInfo {
   description: string;
 }
 
+export type ContentType = 
+  | 'Listicle'
+  | 'Product reviews'
+  | 'Informational'
+  | 'History of'
+  | "Pro's and Con's"
+  | 'Comparisons'
+  | 'How to\'s'
+  | 'Versus'
+  | 'Best for articles'
+  | 'Brand roundup';
+
 export interface GeneratorState {
   websiteUrl: string;
   selectedUrls: string[];

@@ -3,6 +3,7 @@ import { Sparkles } from 'lucide-react';
 import { GeneratorState } from '../lib/types';
 import { WebsiteAnalysis } from './WebsiteAnalysis';
 import { KeywordAnalysis } from './KeywordAnalysis';
+import { ContentConfiguration } from './ContentConfiguration';
 
 export default function AIGenerator() {
   const [state, setState] = useState<GeneratorState>({
@@ -84,6 +85,9 @@ export default function AIGenerator() {
           )}
           {state.currentStep === 'keyword' && (
             <KeywordAnalysis state={state} updateState={updateState} />
+          )}
+          {state.currentStep === 'business' && (
+            <ContentConfiguration state={state} updateState={updateState} />
           )}
         </div>
       </div>
