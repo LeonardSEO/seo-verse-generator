@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Sparkles } from 'lucide-react';
 import { GeneratorState } from '../lib/types';
+import { WebsiteAnalysis } from './WebsiteAnalysis';
 
 export default function AIGenerator() {
   const [state, setState] = useState<GeneratorState>({
@@ -30,6 +31,10 @@ export default function AIGenerator() {
   };
 
   const currentStep = stepMap[state.currentStep];
+
+  const updateState = (updates: Partial<GeneratorState>) => {
+    setState((prev) => ({ ...prev, ...updates }));
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white">
@@ -73,9 +78,9 @@ export default function AIGenerator() {
         </div>
 
         <div className="bg-white/70 backdrop-blur-lg rounded-xl p-8 shadow-xl animate-fadeIn border border-white/30">
-          <p className="text-lg text-gray-600">
-            Welkom bij de Nederlandse Content Generator. Begin met het invoeren van uw website URL.
-          </p>
+          {state.currentStep === 'website' && (
+            <WebsiteAnalysis state={state} updateState={updateState} />
+          )}
         </div>
       </div>
     </div>
