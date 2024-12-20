@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { GeneratorState } from '../lib/types';
 import { useToast } from "@/components/ui/use-toast";
 import LoadingSpinner from './LoadingSpinner';
-import { Textarea } from "@/components/ui/textarea";
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -18,59 +17,39 @@ export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
   const [urlInput, setUrlInput] = useState('');
   const { toast } = useToast();
 
-  const handleUrlsSubmit = () => {
+  const handleUrlSubmit = () => {
     if (!urlInput.trim()) {
       toast({
         title: "Fout",
-        description: "Voer eerst een of meerdere URLs in",
+        description: "Voer eerst een website URL in",
         variant: "destructive",
       });
       return;
     }
 
-    // Split URLs by newline and filter out empty lines
-    const urls = urlInput
-      .split('\n')
-      .map(url => url.trim())
-      .filter(url => url.length > 0);
-
-    if (urls.length === 0) {
+    // Validate URL
+    try {
+      new URL(urlInput.startsWith('http') ? urlInput : `https://${urlInput}`);
+    } catch {
       toast({
         title: "Fout",
-        description: "Geen geldige URLs gevonden",
+        description: "Voer een geldige URL in (bijvoorbeeld: https://voorbeeld.nl)",
         variant: "destructive",
       });
       return;
     }
 
-    // Validate URLs
-    const validUrls = urls.filter(url => {
-      try {
-        new URL(url.startsWith('http') ? url : `https://${url}`);
-        return true;
-      } catch {
-        return false;
-      }
-    });
-
-    if (validUrls.length === 0) {
-      toast({
-        title: "Fout",
-        description: "Geen geldige URLs gevonden. Zorg dat elke URL op een nieuwe regel staat.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    const validUrl = urlInput.startsWith('http') ? urlInput : `https://${urlInput}`;
+    
     updateState({ 
-      selectedUrls: validUrls,
-      websiteUrl: validUrls[0], // Set the first URL as main website URL
+      selectedUrls: [validUrl],
+      websiteUrl: validUrl,
       currentStep: 'keyword'
     });
     
     toast({
       title: "Success",
-      description: `${validUrls.length} URLs toegevoegd`,
+      description: "Website URL toegevoegd",
     });
   };
 
@@ -79,45 +58,38 @@ export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
       <div className="space-y-2">
         <h2 className="text-2xl font-semibold">Website Analyse</h2>
         <p className="text-gray-600">
-          Voer de URLs in die je wilt analyseren (één URL per regel)
+          Voer de URL in van de website die je wilt analyseren
         </p>
       </div>
 
       <Alert>
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
-          Voer de URLs in die je wilt analyseren. Plaats elke URL op een nieuwe regel.
-          Bijvoorbeeld:
-          https://voorbeeld.nl/pagina-1
-          https://voorbeeld.nl/pagina-2
+          Voer de URL in van je website. Bijvoorbeeld: https://voorbeeld.nl
         </AlertDescription>
       </Alert>
 
       <div className="space-y-4">
-        <Textarea
-          placeholder="https://www.voorbeeld.nl/pagina-1&#10;https://www.voorbeeld.nl/pagina-2"
+        <Input
+          placeholder="https://www.voorbeeld.nl"
           value={urlInput}
           onChange={(e) => setUrlInput(e.target.value)}
-          className="min-h-[200px] font-mono text-sm"
+          className="font-mono text-sm"
         />
 
         <Button
-          onClick={handleUrlsSubmit}
+          onClick={handleUrlSubmit}
           disabled={isAnalyzing}
           className="w-full"
         >
-          {isAnalyzing ? <LoadingSpinner /> : "URLs Verwerken"}
+          {isAnalyzing ? <LoadingSpinner /> : "Website Analyseren"}
         </Button>
 
         {state.selectedUrls.length > 0 && (
           <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-sm font-medium mb-2">Toegevoegde URLs ({state.selectedUrls.length})</h3>
-            <div className="max-h-40 overflow-y-auto">
-              {state.selectedUrls.map((url, index) => (
-                <div key={index} className="text-sm text-gray-600 py-1 truncate">
-                  {url}
-                </div>
-              ))}
+            <h3 className="text-sm font-medium mb-2">Geselecteerde website</h3>
+            <div className="text-sm text-gray-600 py-1 truncate">
+              {state.selectedUrls[0]}
             </div>
           </div>
         )}
