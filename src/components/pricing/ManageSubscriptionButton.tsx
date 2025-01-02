@@ -21,7 +21,7 @@ export const ManageSubscriptionButton = () => {
         return;
       }
 
-      console.log('Creating portal session...');
+      console.log('Creating portal session with token:', session.access_token);
       
       const { data, error } = await supabase.functions.invoke('create-portal-session', {
         method: 'POST',
@@ -41,7 +41,6 @@ export const ManageSubscriptionButton = () => {
       }
       
       if (data?.url) {
-        // Gebruik window.location.href om naar de Stripe portal URL te navigeren
         window.location.href = data.url;
       }
     } catch (error) {
