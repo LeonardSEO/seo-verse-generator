@@ -4,9 +4,7 @@ import { GeneratorState } from '../lib/types';
 import { WebsiteAnalysis } from './WebsiteAnalysis';
 import { KeywordAnalysis } from './KeywordAnalysis';
 import { ContentConfiguration } from './ContentConfiguration';
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
-import { useNavigate } from 'react-router-dom';
 
 export default function AIGenerator() {
   const [state, setState] = useState<GeneratorState>({
@@ -27,7 +25,6 @@ export default function AIGenerator() {
   });
 
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const steps = ['Website Analysis', 'Keyword Analysis', 'Business Info', 'Tone of Voice', 'Content Generation'] as const;
 
@@ -42,19 +39,7 @@ export default function AIGenerator() {
   const currentStep = stepMap[state.currentStep];
 
   const updateState = async (updates: Partial<GeneratorState>) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    // If trying to proceed beyond website analysis without auth
-    if (!session && updates.currentStep && updates.currentStep !== 'website') {
-      toast({
-        title: "Login vereist",
-        description: "Log in om deze functie te gebruiken",
-        variant: "destructive",
-      });
-      navigate('/auth');
-      return;
-    }
-
+    // Temporarily removed auth check
     setState((prev) => ({ ...prev, ...updates }));
   };
 

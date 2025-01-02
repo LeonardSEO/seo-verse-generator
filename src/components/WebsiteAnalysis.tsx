@@ -6,8 +6,6 @@ import { useToast } from "@/components/ui/use-toast";
 import LoadingSpinner from './LoadingSpinner';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { useNavigate } from 'react-router-dom';
-import { supabase } from "@/integrations/supabase/client";
 
 interface WebsiteAnalysisProps {
   state: GeneratorState;
@@ -18,21 +16,8 @@ export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [urlInput, setUrlInput] = useState('');
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   const handleUrlSubmit = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      toast({
-        title: "Login vereist",
-        description: "Log in om deze functie te gebruiken",
-        variant: "destructive",
-      });
-      navigate('/auth');
-      return;
-    }
-
     if (!urlInput.trim()) {
       toast({
         title: "Fout",
