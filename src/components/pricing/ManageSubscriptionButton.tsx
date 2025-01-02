@@ -41,6 +41,7 @@ export const ManageSubscriptionButton = () => {
       }
       
       if (data?.url) {
+        // Gebruik window.location.href om naar de Stripe portal URL te navigeren
         window.location.href = data.url;
       }
     } catch (error) {

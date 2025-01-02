@@ -38,11 +38,6 @@ serve(async (req) => {
 
     console.log('Authenticated user:', user.id)
 
-    // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-      apiVersion: '2023-10-16',
-    })
-
     // Get customer from database
     const { data: customer, error: customerError } = await supabaseAdmin
       .from('customers')
@@ -57,7 +52,12 @@ serve(async (req) => {
 
     console.log('Found customer:', customer.stripe_customer_id)
 
-    // Get the origin from the request headers
+    // Initialize Stripe
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+      apiVersion: '2023-10-16',
+    })
+
+    // Get the origin from the request headers or use the production URL as fallback
     const origin = req.headers.get('origin') || 'https://seo-verse-generator.lovable.app'
     console.log('Using return URL with origin:', origin)
 
