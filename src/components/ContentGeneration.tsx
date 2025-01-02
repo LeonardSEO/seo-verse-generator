@@ -178,7 +178,17 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
               </Button>
             </div>
             <div className="prose prose-lg max-w-none p-6 bg-white rounded-lg shadow-sm border">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown 
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  // Override heading rendering to ensure proper styling
+                  h1: ({node, ...props}) => <h1 className="text-4xl font-bold mb-6" {...props} />,
+                  h2: ({node, ...props}) => <h2 className="text-3xl font-semibold mb-4" {...props} />,
+                  h3: ({node, ...props}) => <h3 className="text-2xl font-semibold mb-3" {...props} />,
+                  // Make links stand out more
+                  a: ({node, ...props}) => <a className="text-blue-600 hover:text-blue-800 underline" {...props} />,
+                }}
+              >
                 {state.generatedContent}
               </ReactMarkdown>
             </div>

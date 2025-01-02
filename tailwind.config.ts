@@ -43,6 +43,49 @@ export default {
           foreground: "#ffffff",
         },
       },
+      typography: {
+        DEFAULT: {
+          css: {
+            h1: {
+              fontSize: '2.25rem',
+              fontWeight: '700',
+              marginBottom: '1rem',
+              color: '#111827',
+            },
+            h2: {
+              fontSize: '1.875rem',
+              fontWeight: '600',
+              marginBottom: '0.75rem',
+              color: '#1F2937',
+            },
+            h3: {
+              fontSize: '1.5rem',
+              fontWeight: '600',
+              marginBottom: '0.75rem',
+              color: '#374151',
+            },
+            a: {
+              color: '#2563EB',
+              '&:hover': {
+                color: '#1D4ED8',
+              },
+              textDecoration: 'underline',
+            },
+            code: {
+              backgroundColor: '#F3F4F6',
+              padding: '0.2em 0.4em',
+              borderRadius: '0.25rem',
+              fontSize: '0.875em',
+            },
+            'pre code': {
+              backgroundColor: 'transparent',
+              padding: '0',
+              borderRadius: '0',
+              fontSize: 'inherit',
+            },
+          },
+        },
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
@@ -69,5 +112,5 @@ export default {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
 } satisfies Config;
