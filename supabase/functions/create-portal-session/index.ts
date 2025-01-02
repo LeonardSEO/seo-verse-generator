@@ -29,11 +29,18 @@ serve(async (req) => {
 
     // Get user from the JWT token
     const token = authHeader.replace('Bearer ', '')
+    console.log('Attempting to get user with token:', token.substring(0, 10) + '...')
+    
     const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
     
-    if (userError || !user) {
+    if (userError) {
       console.error('User fetch error:', userError)
       throw new Error('Unauthorized')
+    }
+
+    if (!user) {
+      console.error('No user found')
+      throw new Error('No user found')
     }
 
     console.log('Authenticated user:', user.id)
@@ -45,9 +52,14 @@ serve(async (req) => {
       .eq('id', user.id)
       .single()
 
-    if (customerError || !customer?.stripe_customer_id) {
+    if (customerError) {
       console.error('Customer fetch error:', customerError)
       throw new Error('No customer found')
+    }
+
+    if (!customer?.stripe_customer_id) {
+      console.error('No Stripe customer ID found')
+      throw new Error('No Stripe customer found')
     }
 
     console.log('Found customer:', customer.stripe_customer_id)
@@ -79,10 +91,13 @@ serve(async (req) => {
   } catch (error) {
     console.error('Portal session error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        error: error.message,
+        details: error.stack
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 400,
+        status: error.message === 'Unauthorized' ? 401 : 400,
       }
     )
   }

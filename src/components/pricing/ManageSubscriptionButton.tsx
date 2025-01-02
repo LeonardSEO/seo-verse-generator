@@ -21,12 +21,16 @@ export const ManageSubscriptionButton = () => {
         return;
       }
 
-      console.log('Creating portal session with token:', session.access_token);
+      console.log('Creating portal session with session:', {
+        accessToken: session.access_token,
+        userId: session.user.id
+      });
       
       const { data, error } = await supabase.functions.invoke('create-portal-session', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
         },
       });
       
