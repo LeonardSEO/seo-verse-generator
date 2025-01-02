@@ -34,7 +34,6 @@ export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
       return;
     }
 
-    // Validate URL format
     if (!isValidUrl(urlInput)) {
       toast({
         title: "Fout",
@@ -44,10 +43,7 @@ export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
       return;
     }
 
-    // Normalize URL (add https:// if missing)
     const validUrl = urlInput.startsWith('http') ? urlInput : `https://${urlInput}`;
-
-    // Update state without trying to fetch the URL
     updateState({ 
       websiteUrl: validUrl,
       currentStep: 'keyword'
