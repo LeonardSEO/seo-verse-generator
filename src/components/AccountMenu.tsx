@@ -72,10 +72,11 @@ export default function AccountMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar>
+          <Avatar className="bg-primary">
             <AvatarImage src={user.user_metadata?.avatar_url} />
-            <AvatarFallback>
-              {user.email?.charAt(0).toUpperCase() || 'U'}
+            <AvatarFallback className="bg-primary text-primary-foreground">
+              {user.user_metadata?.full_name?.charAt(0).toUpperCase() || 
+               user.email?.charAt(0).toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
         </Button>

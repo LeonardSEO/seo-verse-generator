@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import AuthPage from "./pages/Auth";
 import AdminPage from "./pages/Admin";
+import SettingsPage from "./pages/Settings";
 import AuthGuard from "./components/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -25,6 +26,14 @@ const App = () => {
               element={
                 <AuthGuard>
                   <AdminPage />
+                </AuthGuard>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <AuthGuard>
+                  <SettingsPage />
                 </AuthGuard>
               }
             />

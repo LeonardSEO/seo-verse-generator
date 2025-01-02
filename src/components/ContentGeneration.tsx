@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GeneratorState } from '../lib/types';
 import { useToast } from "@/hooks/use-toast";
 import LoadingSpinner from './LoadingSpinner';
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Copy, CheckCheck } from 'lucide-react';
 import { Button } from './ui/button';
 import ReactMarkdown from 'react-markdown';
+import { useNavigate } from 'react-router-dom';
 
 interface ContentGenerationProps {
   state: GeneratorState;
@@ -24,6 +25,7 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleCopy = async () => {
     if (state.generatedContent) {
@@ -38,6 +40,18 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
   };
 
   const handleGenerate = async () => {
+    // Double check authentication before generating
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({
+        title: "Niet ingelogd",
+        description: "Je moet ingelogd zijn om content te genereren.",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
+
     if (!state.mainKeyword || !state.websiteUrl) {
       toast({
         title: "Fout",
@@ -61,6 +75,12 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
       // Then perform keyword research
       const research = await researchKeyword(state.mainKeyword);
       updateState({ research });
+
+      // Final authentication check before making the expensive API call
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      if (!currentSession) {
+        throw new Error("Authenticatie verlopen. Log opnieuw in.");
+      }
 
       // Finally generate content using OpenRouter
       const { data: adminSettings } = await supabase
