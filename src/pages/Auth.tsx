@@ -36,8 +36,8 @@ export default function AuthPage() {
           }}
           providers={['github']}
           view="sign_in"
-          showLinks={false}
-          magicLink={false}
+          showLinks={true}
+          magicLink={true}
           socialLayout="horizontal"
           redirectTo={window.location.origin}
         />
