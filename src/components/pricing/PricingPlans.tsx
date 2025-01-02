@@ -1,7 +1,10 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
-import { Check, Star, Zap, Users } from 'lucide-react';
+import { Check, Star, Zap, Users, Shield } from 'lucide-react';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useToast } from '@/components/ui/use-toast';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 interface PricingPlansProps {
@@ -9,6 +12,25 @@ interface PricingPlansProps {
 }
 
 export const PricingPlans = ({ handleCheckout }: PricingPlansProps) => {
+  const { data: subscription, isLoading } = useSubscription();
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleUpgrade = async (priceId: string) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      toast({
+        title: "Login vereist",
+        description: "Log eerst in om een abonnement af te sluiten",
+        variant: "destructive",
+      });
+      navigate('/auth');
+      return;
+    }
+
+    await handleCheckout(priceId);
+  };
+
   return (
     <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
       {/* Basic Plan */}
@@ -16,6 +38,12 @@ export const PricingPlans = ({ handleCheckout }: PricingPlansProps) => {
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 text-white px-4 py-1 rounded-full text-sm">
           Meest Gekozen
         </div>
+        {subscription?.level === 'free' && (
+          <div className="absolute -top-3 right-4 bg-green-600 text-white px-4 py-1 rounded-full text-sm flex items-center">
+            <Shield className="w-4 h-4 mr-1" />
+            Huidig Plan
+          </div>
+        )}
         <CardHeader>
           <h3 className="text-2xl font-bold text-white">Basic</h3>
           <p className="text-gray-400">Voor groeiende bedrijven</p>
@@ -52,9 +80,10 @@ export const PricingPlans = ({ handleCheckout }: PricingPlansProps) => {
         <CardFooter>
           <Button 
             className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-            onClick={() => handleCheckout('price_1QcutIIBuO6WDytxAQWHTsH2')}
+            onClick={() => handleUpgrade('price_1QcutIIBuO6WDytxAQWHTsH2')}
+            disabled={subscription?.level === 'pro'}
           >
-            Start Gratis Proefperiode
+            {subscription?.level === 'pro' ? 'Al Pro Gebruiker' : 'Start Gratis Proefperiode'}
           </Button>
         </CardFooter>
       </Card>
@@ -65,6 +94,12 @@ export const PricingPlans = ({ handleCheckout }: PricingPlansProps) => {
           <Star className="h-4 w-4 mr-1" />
           Premium Features
         </div>
+        {subscription?.level === 'pro' && (
+          <div className="absolute -top-3 right-4 bg-green-600 text-white px-4 py-1 rounded-full text-sm flex items-center">
+            <Shield className="w-4 h-4 mr-1" />
+            Huidig Plan
+          </div>
+        )}
         <CardHeader>
           <h3 className="text-2xl font-bold text-white flex items-center">
             Pro
@@ -112,9 +147,10 @@ export const PricingPlans = ({ handleCheckout }: PricingPlansProps) => {
         <CardFooter className="flex flex-col space-y-4">
           <Button 
             className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
-            onClick={() => handleCheckout('price_1Qcv0UIBuO6WDytxyZGkcKxA')}
+            onClick={() => handleUpgrade('price_1Qcv0UIBuO6WDytxyZGkcKxA')}
+            disabled={subscription?.level === 'pro'}
           >
-            Upgrade naar Pro
+            {subscription?.level === 'pro' ? 'Actief Abonnement' : 'Upgrade naar Pro'}
           </Button>
           <p className="text-xs text-center text-purple-300">
             <Users className="h-4 w-4 inline mr-1" />

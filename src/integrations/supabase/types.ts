@@ -34,14 +34,17 @@ export type Database = {
         Row: {
           id: string
           stripe_customer_id: string | null
+          subscription_level: string | null
         }
         Insert: {
           id: string
           stripe_customer_id?: string | null
+          subscription_level?: string | null
         }
         Update: {
           id?: string
           stripe_customer_id?: string | null
+          subscription_level?: string | null
         }
         Relationships: []
       }

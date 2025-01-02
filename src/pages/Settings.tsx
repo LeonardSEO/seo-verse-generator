@@ -9,6 +9,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { Upload, ArrowLeft } from 'lucide-react';
+import { useSubscription } from '@/hooks/useSubscription';
+import { Badge } from '@/components/ui/badge';
 
 export default function Settings() {
   const [loading, setLoading] = useState(true);
@@ -17,6 +19,7 @@ export default function Settings() {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { data: subscription } = useSubscription();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -50,7 +53,7 @@ export default function Settings() {
       const fileExt = file.name.split('.').pop();
       const filePath = `${session.user.id}/${crypto.randomUUID()}.${fileExt}`;
 
-      const { error: uploadError, data } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, { upsert: true });
 
@@ -136,6 +139,35 @@ export default function Settings() {
           <h1 className="text-3xl font-bold">Account Instellingen</h1>
         </div>
         
+        {/* Subscription Card */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Abonnement</CardTitle>
+            <CardDescription>
+              Je huidige abonnementsstatus
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Huidig Plan</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge variant={subscription?.level === 'pro' ? 'default' : 'secondary'}>
+                    {subscription?.level === 'pro' ? 'Pro' : 'Basic'}
+                  </Badge>
+                </div>
+              </div>
+              <Button
+                onClick={() => navigate('/pricing')}
+                variant="outline"
+              >
+                {subscription?.level === 'pro' ? 'Beheer Abonnement' : 'Upgrade naar Pro'}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Profile Card */}
         <Card>
           <CardHeader>
             <CardTitle>Profiel</CardTitle>
