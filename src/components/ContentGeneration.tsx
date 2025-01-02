@@ -5,12 +5,9 @@ import LoadingSpinner from './LoadingSpinner';
 import { researchKeyword } from '../lib/research';
 import { findSitemapUrl, extractUrlsFromSitemap } from '../lib/sitemap';
 import { supabase } from "@/integrations/supabase/client";
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import { Markdown } from 'tiptap-markdown';
-import Link from '@tiptap/extension-link';
 import { Copy, CheckCheck } from 'lucide-react';
 import { Button } from './ui/button';
+import ReactMarkdown from 'react-markdown';
 
 interface ContentGenerationProps {
   state: GeneratorState;
@@ -27,26 +24,6 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
   const { toast } = useToast();
-
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Markdown,
-      Link.configure({
-        openOnClick: true,
-        HTMLAttributes: {
-          class: 'text-primary hover:text-primary/80 underline'
-        }
-      })
-    ],
-    content: state.generatedContent || '',
-    editable: false,
-    editorProps: {
-      attributes: {
-        class: 'prose prose-lg max-w-none focus:outline-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-primary prose-strong:text-gray-900 prose-code:text-primary prose-code:bg-gray-100 prose-code:rounded prose-code:px-1'
-      }
-    }
-  });
 
   const handleCopy = async () => {
     if (state.generatedContent) {
@@ -112,10 +89,6 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
         selectedUrls: urls
       });
 
-      if (editor) {
-        editor.commands.setContent(content);
-      }
-
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -170,7 +143,7 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
               </Button>
             </div>
             <div className="prose prose-lg max-w-none p-6 bg-white rounded-lg shadow-sm border">
-              <EditorContent editor={editor} />
+              <ReactMarkdown>{state.generatedContent}</ReactMarkdown>
             </div>
           </div>
         )}
