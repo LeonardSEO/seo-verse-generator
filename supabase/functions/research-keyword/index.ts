@@ -1,62 +1,78 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { corsHeaders } from '../_shared/cors.ts'
 
-const OPENPERPLEX_API_KEY = Deno.env.get('OPENPERPLEX_API_KEY')
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
     const { keyword } = await req.json()
+    console.log('Received keyword research request for:', keyword)
+    
+    if (!keyword) {
+      return new Response(
+        JSON.stringify({ error: 'Keyword is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+    const apiKey = Deno.env.get('OPENPERPLEX_API_KEY')
+    if (!apiKey) {
+      console.error('OpenPerplex API key not configured')
+      return new Response(
+        JSON.stringify({ error: 'API configuration error' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const baseUrl = 'https://44c57909-d9e2-41cb-9244-9cd4a443cb41.app.bhs.ai.cloud.ovh.net'
+    
+    console.log('Making request to OpenPerplex API...')
+    const response = await fetch(`${baseUrl}/custom_search`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENPERPLEX_API_KEY}`,
-        'Content-Type': 'application/json',
+        'X-API-Key': apiKey,
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-small-128k-online',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a helpful assistant that provides concise and precise information about the keyword. Focus on providing factual, market-relevant information.'
-          },
-          {
-            role: 'user',
-            content: `Find highly specific generalised data about the Dutch keyword '${keyword}'. Do not name the source, webshops or brand other than the keyword!`
-          }
-        ],
-        temperature: 0.2,
-        top_p: 0.9,
-        max_tokens: 1000,
+        user_prompt: `Find highly specific generalised data about the Dutch keyword '${keyword}'. Do not name the source, webshops or brand other than the keyword!`,
+        system_prompt: 'You are a helpful assistant that provides concise and precise information about the keyword. Focus on providing factual, market-relevant information.',
+        location: 'nl',
+        pro_mode: true,
+        search_type: 'general',
+        return_sources: false,
         return_images: false,
-        return_related_questions: false,
-        search_domain_filter: ['perplexity.ai'],
-        search_recency_filter: 'year',
-        frequency_penalty: 1,
-        presence_penalty: 0
+        recency_filter: 'year',
+        temperature: 0.2,
+        top_p: 0.9
       })
     })
 
+    if (!response.ok) {
+      const errorData = await response.text()
+      console.error('OpenPerplex API error:', errorData)
+      throw new Error(`OpenPerplex API error: ${errorData}`)
+    }
+
     const data = await response.json()
-    
+    console.log('OpenPerplex API response:', JSON.stringify(data, null, 2))
+
     return new Response(
-      JSON.stringify({ llm_response: data.choices[0].message.content }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
-      },
+      JSON.stringify(data),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
+
   } catch (error) {
+    console.error('Error:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500,
-      },
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
 })
