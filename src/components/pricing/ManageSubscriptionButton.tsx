@@ -21,8 +21,8 @@ export const ManageSubscriptionButton = () => {
         return;
       }
 
-      console.log('Creating portal session with token:', session.access_token);
-
+      console.log('Creating portal session...');
+      
       const { data, error } = await supabase.functions.invoke('create-portal-session', {
         method: 'POST',
         headers: {
