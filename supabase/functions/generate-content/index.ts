@@ -18,9 +18,18 @@ serve(async (req) => {
 
   try {
     const { prompt, model = "anthropic/claude-3-sonnet", useOpenPerplex = false } = await req.json();
+    console.log('Received request:', { prompt, model, useOpenPerplex });
+
+    if (!OPENROUTER_API_KEY || !OPENPERPLEX_API_KEY) {
+      console.error('Missing API keys:', { 
+        hasOpenRouter: !!OPENROUTER_API_KEY, 
+        hasOpenPerplex: !!OPENPERPLEX_API_KEY 
+      });
+      throw new Error('API keys not configured');
+    }
 
     if (useOpenPerplex) {
-      // Use OpenPerplex API
+      console.log('Using OpenPerplex API');
       const response = await fetch('https://api.openperplex.com/api/v1/completions', {
         method: 'POST',
         headers: {
@@ -34,7 +43,14 @@ serve(async (req) => {
         }),
       });
 
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('OpenPerplex API error:', error);
+        throw new Error(`OpenPerplex API error: ${error}`);
+      }
+
       const data = await response.json();
+      console.log('OpenPerplex response received');
       return new Response(JSON.stringify({ 
         content: data.choices[0].text,
         provider: 'openperplex'
@@ -42,7 +58,7 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } else {
-      // Use OpenRouter API
+      console.log('Using OpenRouter API with model:', model);
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -68,7 +84,14 @@ serve(async (req) => {
         })
       });
 
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('OpenRouter API error:', error);
+        throw new Error(`OpenRouter API error: ${error}`);
+      }
+
       const data = await response.json();
+      console.log('OpenRouter response received');
       return new Response(JSON.stringify({
         content: data.choices[0].message.content,
         provider: 'openrouter',
@@ -79,7 +102,10 @@ serve(async (req) => {
     }
   } catch (error) {
     console.error('Error in generate-content function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      details: error.stack
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
