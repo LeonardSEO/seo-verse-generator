@@ -3,6 +3,7 @@ import { supabase } from "../integrations/supabase/client";
 export async function researchKeyword(keyword: string): Promise<string> {
   try {
     const { data, error } = await supabase.functions.invoke('research-keyword', {
+      method: 'POST',
       body: { keyword }
     });
 

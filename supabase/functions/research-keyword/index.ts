@@ -53,6 +53,7 @@ serve(async (req) => {
       top_p: '0.9'
     })
 
+    console.log('Making request to OpenPerplex API...')
     const response = await fetch(`${baseUrl}/custom_search?${params}`, {
       method: 'GET',
       headers: {
@@ -61,12 +62,14 @@ serve(async (req) => {
       }
     })
 
-    const data = await response.json()
-    console.log('OpenPerplex response:', data)
-
     if (!response.ok) {
-      throw new Error(data.detail || `HTTP error! Status: ${response.status}`)
+      const errorData = await response.text()
+      console.error('OpenPerplex API error:', errorData)
+      throw new Error(`OpenPerplex API error: ${errorData}`)
     }
+
+    const data = await response.json()
+    console.log('OpenPerplex response received')
 
     return new Response(
       JSON.stringify(data),
