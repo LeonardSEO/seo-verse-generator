@@ -38,8 +38,8 @@ export default function AuthPage() {
           view="sign_in"
           showLinks={true}
           magicLink={true}
-          socialLayout="horizontal"
           redirectTo={window.location.origin}
+          socialLayout="horizontal"
         />
       </div>
     </div>
