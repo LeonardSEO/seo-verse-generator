@@ -5,17 +5,11 @@ import { Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ModelList } from './admin/ModelList';
 import { AddModelForm } from './admin/AddModelForm';
-import { SystemPrompts } from './admin/SystemPrompts';
 import type { Settings as AdminSettings, Model } from './types/admin';
 import { useNavigate } from 'react-router-dom';
 
 const defaultSettings: AdminSettings = {
   models: [],
-  systemPrompts: {
-    keywordResearch: `Find highly specific generalised data about the Dutch keyword. Do not name the source, webshops or brand other than the keyword!`,
-    toneAnalysis: `Analyze the tone and style of the provided text. Focus on identifying key emotional elements, writing style, and overall communication approach.`,
-    contentGeneration: `Generate high-quality, engaging content based on the provided topic and requirements. Ensure the content is original, informative, and matches the specified tone and style.`
-  },
   defaultFreeModel: '',
   defaultPremiumModel: ''
 };
@@ -38,7 +32,6 @@ export default function AdminDashboard() {
       return;
     }
 
-    // Check if user is admin by trying to get their email
     const { data: { user } } = await supabase.auth.getUser();
     if (user?.email !== 'leonardvanhemert@gmail.com') {
       toast({
@@ -67,17 +60,10 @@ export default function AdminDashboard() {
       if (error) throw error;
       
       if (data?.settings) {
-        // Cast to unknown first, then to AdminSettings to avoid type error
         const settingsData = (data.settings as unknown) as AdminSettings;
         
-        // Validate and set default values if needed
         setSettings({
           models: Array.isArray(settingsData.models) ? settingsData.models : [],
-          systemPrompts: {
-            keywordResearch: settingsData.systemPrompts?.keywordResearch || defaultSettings.systemPrompts.keywordResearch,
-            toneAnalysis: settingsData.systemPrompts?.toneAnalysis || defaultSettings.systemPrompts.toneAnalysis,
-            contentGeneration: settingsData.systemPrompts?.contentGeneration || defaultSettings.systemPrompts.contentGeneration
-          },
           defaultFreeModel: settingsData.defaultFreeModel || '',
           defaultPremiumModel: settingsData.defaultPremiumModel || ''
         });
@@ -162,16 +148,6 @@ export default function AdminDashboard() {
     }));
   };
 
-  const handlePromptChange = (field: keyof typeof settings.systemPrompts, value: string) => {
-    setSettings(prev => ({
-      ...prev,
-      systemPrompts: {
-        ...prev.systemPrompts,
-        [field]: value
-      }
-    }));
-  };
-
   return (
     <div className="max-w-4xl mx-auto p-6">
       <div className="flex items-center gap-3 mb-8">
@@ -197,13 +173,6 @@ export default function AdminDashboard() {
 
             <AddModelForm onAddModel={handleAddModel} />
           </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <SystemPrompts
-            prompts={settings.systemPrompts}
-            onChange={handlePromptChange}
-          />
         </div>
 
         <Button 

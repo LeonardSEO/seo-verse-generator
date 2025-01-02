@@ -6,15 +6,8 @@ export interface Model {
   isFree: boolean;
 }
 
-export interface SystemPrompts {
-  keywordResearch: string;
-  toneAnalysis: string;
-  contentGeneration: string;
-}
-
 export interface Settings {
   models: Model[];
-  systemPrompts: SystemPrompts;
   defaultFreeModel: string;
   defaultPremiumModel: string;
 }
