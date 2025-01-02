@@ -17,8 +17,7 @@ export function SystemPrompts({ prompts, onChange }: SystemPromptsProps) {
         <Textarea
           value={prompts.keywordResearch}
           onChange={(e) => onChange('keywordResearch', e.target.value)}
-          placeholder="Voer hier de keyword research prompt in..."
-          rows={4}
+          className="min-h-[100px]"
         />
       </div>
 
@@ -27,8 +26,7 @@ export function SystemPrompts({ prompts, onChange }: SystemPromptsProps) {
         <Textarea
           value={prompts.toneAnalysis}
           onChange={(e) => onChange('toneAnalysis', e.target.value)}
-          placeholder="Voer hier de tone analysis prompt in..."
-          rows={4}
+          className="min-h-[100px]"
         />
       </div>
 
@@ -37,8 +35,7 @@ export function SystemPrompts({ prompts, onChange }: SystemPromptsProps) {
         <Textarea
           value={prompts.contentGeneration}
           onChange={(e) => onChange('contentGeneration', e.target.value)}
-          placeholder="Voer hier de content generation prompt in..."
-          rows={4}
+          className="min-h-[100px]"
         />
       </div>
     </div>
