@@ -4,21 +4,22 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Settings, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
-import type { Json } from "@/integrations/supabase/types";
 
-type AdminSettings = Database['public']['Tables']['admin_settings']['Row'];
+interface Model {
+  id: string;
+  name: string;
+  description: string;
+  isDefault: boolean;
+  isFree: boolean;
+}
 
 interface Settings {
-  defaultModel: string;
+  models: Model[];
   systemPrompts: {
     keywordResearch: string;
     toneAnalysis: string;
@@ -28,7 +29,7 @@ interface Settings {
 
 export default function AdminDashboard() {
   const [settings, setSettings] = useState<Settings>({
-    defaultModel: 'gpt-4o-mini',
+    models: [],
     systemPrompts: {
       keywordResearch: '',
       toneAnalysis: '',
@@ -36,6 +37,13 @@ export default function AdminDashboard() {
     }
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [newModel, setNewModel] = useState<Model>({
+    id: '',
+    name: '',
+    description: '',
+    isDefault: false,
+    isFree: true
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -52,16 +60,8 @@ export default function AdminDashboard() {
 
       if (error) throw error;
       
-      // Safely type cast the JSON data
-      if (data?.settings && typeof data.settings === 'object') {
-        const settingsData = data.settings as unknown as Settings;
-        if (
-          'defaultModel' in settingsData && 
-          'systemPrompts' in settingsData && 
-          typeof settingsData.systemPrompts === 'object'
-        ) {
-          setSettings(settingsData);
-        }
+      if (data?.settings) {
+        setSettings(data.settings as Settings);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -82,7 +82,7 @@ export default function AdminDashboard() {
         .from('admin_settings')
         .upsert({ 
           id: 1, 
-          settings: settings as unknown as Json,
+          settings,
           updated_at: new Date().toISOString()
         });
 
@@ -104,28 +104,148 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleAddModel = () => {
+    if (!newModel.id || !newModel.name) {
+      toast({
+        title: "Error",
+        description: "Model ID en naam zijn verplicht",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSettings(prev => ({
+      ...prev,
+      models: [...prev.models, newModel]
+    }));
+
+    setNewModel({
+      id: '',
+      name: '',
+      description: '',
+      isDefault: false,
+      isFree: true
+    });
+  };
+
+  const handleSetDefaultModel = (modelId: string) => {
+    setSettings(prev => ({
+      ...prev,
+      models: prev.models.map(model => ({
+        ...model,
+        isDefault: model.id === modelId
+      }))
+    }));
+  };
+
+  const handleRemoveModel = (modelId: string) => {
+    setSettings(prev => ({
+      ...prev,
+      models: prev.models.filter(model => model.id !== modelId)
+    }));
+  };
+
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+      <div className="flex items-center gap-3 mb-8">
+        <Settings className="w-8 h-8" />
+        <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+      </div>
 
-      <div className="space-y-8 bg-white p-6 rounded-lg shadow">
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">AI Model Instellingen</h2>
-          
-          <div className="space-y-2">
-            <Label>Standaard Model</Label>
-            <Select
-              value={settings.defaultModel}
-              onValueChange={(value) => setSettings(prev => ({ ...prev, defaultModel: value }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Selecteer een model" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="gpt-4o-mini">GPT-4 Mini (Snel & Goedkoop)</SelectItem>
-                <SelectItem value="gpt-4o">GPT-4 (Krachtig)</SelectItem>
-              </SelectContent>
-            </Select>
+      <div className="space-y-8">
+        <div className="bg-white p-6 rounded-lg shadow space-y-6">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            AI Model Instellingen
+          </h2>
+
+          <div className="space-y-4">
+            <div className="border rounded-lg p-4">
+              <h3 className="font-medium mb-4">Beschikbare Modellen</h3>
+              <div className="space-y-4">
+                {settings.models.map((model) => (
+                  <div key={model.id} className="flex items-start justify-between gap-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <RadioGroup
+                          value={settings.models.find(m => m.isDefault)?.id}
+                          onValueChange={handleSetDefaultModel}
+                        >
+                          <RadioGroupItem value={model.id} id={`default-${model.id}`} />
+                        </RadioGroup>
+                        <div>
+                          <p className="font-medium">{model.name}</p>
+                          <p className="text-sm text-gray-600">{model.id}</p>
+                          <p className="text-sm text-gray-500">{model.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {model.isFree && (
+                        <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">Gratis</span>
+                      )}
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleRemoveModel(model.id)}
+                      >
+                        Verwijder
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="border rounded-lg p-4">
+              <h3 className="font-medium mb-4">Nieuw Model Toevoegen</h3>
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="modelId">Model ID</Label>
+                  <Input
+                    id="modelId"
+                    value={newModel.id}
+                    onChange={(e) => setNewModel(prev => ({ ...prev, id: e.target.value }))}
+                    placeholder="bijv. google/gemini-2.0-flash-thinking-exp:free"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="modelName">Naam</Label>
+                  <Input
+                    id="modelName"
+                    value={newModel.name}
+                    onChange={(e) => setNewModel(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="bijv. Gemini 2.0 Flash"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="modelDescription">Beschrijving</Label>
+                  <Input
+                    id="modelDescription"
+                    value={newModel.description}
+                    onChange={(e) => setNewModel(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="bijv. Snelle, gratis versie"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="isFree"
+                    checked={newModel.isFree}
+                    onCheckedChange={(checked) => 
+                      setNewModel(prev => ({ ...prev, isFree: checked as boolean }))
+                    }
+                  />
+                  <label
+                    htmlFor="isFree"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Gratis model
+                  </label>
+                </div>
+                <Button onClick={handleAddModel}>
+                  Model Toevoegen
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 
