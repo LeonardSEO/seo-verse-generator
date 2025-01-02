@@ -12,25 +12,11 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useNavigate } from 'react-router-dom';
 import { Label } from "@/components/ui/label";
+import type { Settings as AdminSettings, Model } from './types/admin';
 
 interface ContentGenerationProps {
   state: GeneratorState;
   updateState: (updates: Partial<GeneratorState>) => void;
-}
-
-interface Model {
-  id: string;
-  name: string;
-  description: string;
-  isFree: boolean;
-}
-
-interface AdminSettings {
-  settings: {
-    models: Model[];
-    defaultFreeModel: string;
-    defaultPremiumModel: string;
-  };
 }
 
 export function ContentGeneration({ state, updateState }: ContentGenerationProps) {
@@ -69,7 +55,8 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
         .single();
 
       if (adminSettings?.settings) {
-        const settings = (adminSettings.settings as AdminSettings['settings']);
+        // First cast to unknown, then to AdminSettings to avoid type errors
+        const settings = (adminSettings.settings as unknown) as AdminSettings;
         setModels(settings.models || []);
         
         // Set default model based on subscription status
