@@ -1,11 +1,11 @@
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
-import { Check, Star, Zap, Users, Shield, Settings } from 'lucide-react';
+import { Star, Zap, Users, Shield } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/components/ui/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { PricingPlan } from './PricingPlan';
+import { ManageSubscriptionButton } from './ManageSubscriptionButton';
 
 interface PricingPlansProps {
   handleCheckout: (priceId: string) => Promise<void>;
@@ -40,189 +40,71 @@ export const PricingPlans = ({ handleCheckout }: PricingPlansProps) => {
     }
   };
 
-  const handleManageSubscription = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        toast({
-          title: "Login vereist",
-          description: "Log eerst in om je abonnement te beheren",
-          variant: "destructive",
-        });
-        navigate('/auth');
-        return;
-      }
+  const basicFeatures = [
+    '5.000 woorden per maand',
+    'Keyword-analyse tools',
+    'URL content verwerking',
+    'Email support binnen 24 uur',
+  ];
 
-      const { data, error } = await supabase.functions.invoke('create-portal-session', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-      
-      if (error) {
-        console.error('Portal session error:', error);
-        toast({
-          title: "Er is iets misgegaan",
-          description: "Kon geen verbinding maken met het klantportaal",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      if (data?.url) {
-        window.location.href = data.url;
-      }
-    } catch (error) {
-      console.error('Error creating portal session:', error);
-      toast({
-        title: "Er is iets misgegaan",
-        description: "Kon geen verbinding maken met het klantportaal",
-        variant: "destructive",
-      });
-    }
-  };
+  const proFeatures = [
+    'Onbeperkt aantal woorden',
+    'Premium AI modellen',
+    'Geavanceerde tone-of-voice analyse',
+    'Prioriteit support',
+    'Custom branding opties',
+    'API toegang',
+  ];
 
   return (
     <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
       {subscription?.level === 'pro' && (
         <div className="md:col-span-2 w-full flex justify-center mb-4">
-          <Button 
-            variant="outline" 
-            onClick={handleManageSubscription}
-            className="flex items-center gap-2"
-          >
-            <Settings className="w-4 h-4" />
-            Beheer je abonnement
-          </Button>
+          <ManageSubscriptionButton />
         </div>
       )}
       
-      {/* Basic Plan */}
-      <Card className="relative bg-gray-900/50 border-gray-800 backdrop-blur-sm transform hover:scale-105 transition-all duration-300">
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-600 text-white px-4 py-1 rounded-full text-sm">
-          Meest Gekozen
-        </div>
-        {subscription?.level === 'free' && (
+      <PricingPlan
+        title="Basic"
+        description="Voor groeiende bedrijven"
+        price="€5"
+        interval="maand"
+        features={basicFeatures}
+        priceId="price_1QcutIIBuO6WDytxAQWHTsH2"
+        isPopular={true}
+        isCurrentPlan={subscription?.level === 'free'}
+        onUpgrade={handleUpgrade}
+        buttonText={subscription?.level === 'pro' ? 'Al Pro Gebruiker' : 'Start Gratis Proefperiode'}
+        buttonDisabled={subscription?.level === 'pro'}
+        highlightText="Meest Gekozen"
+        statusBadge={subscription?.level === 'free' && (
           <div className="absolute -top-3 right-4 bg-green-600 text-white px-4 py-1 rounded-full text-sm flex items-center">
             <Shield className="w-4 h-4 mr-1" />
             Huidig Plan
           </div>
         )}
-        <CardHeader>
-          <h3 className="text-2xl font-bold text-white">Basic</h3>
-          <p className="text-gray-400">Voor groeiende bedrijven</p>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4">
-            <span className="text-4xl font-bold">€5</span>
-            <span className="text-gray-400">/maand</span>
-          </div>
-          <div className="bg-purple-900/30 p-4 rounded-lg mb-6">
-            <p className="text-sm text-purple-200">
-              Ontdek de kracht van AI-contentgeneratie. Perfect voor beginners die willen groeien met professionele content.
-            </p>
-          </div>
-          <ul className="space-y-3">
-            <li className="flex items-center">
-              <Check className="h-5 w-5 text-green-500 mr-2" />
-              <span>5.000 woorden per maand</span>
-            </li>
-            <li className="flex items-center">
-              <Check className="h-5 w-5 text-green-500 mr-2" />
-              <span>Keyword-analyse tools</span>
-            </li>
-            <li className="flex items-center">
-              <Check className="h-5 w-5 text-green-500 mr-2" />
-              <span>URL content verwerking</span>
-            </li>
-            <li className="flex items-center">
-              <Check className="h-5 w-5 text-green-500 mr-2" />
-              <span>Email support binnen 24 uur</span>
-            </li>
-          </ul>
-        </CardContent>
-        <CardFooter>
-          <Button 
-            className="w-full bg-purple-600 hover:bg-purple-700 text-white"
-            onClick={() => handleUpgrade('price_1QcutIIBuO6WDytxAQWHTsH2')}
-            disabled={subscription?.level === 'pro'}
-          >
-            {subscription?.level === 'pro' ? 'Al Pro Gebruiker' : 'Start Gratis Proefperiode'}
-          </Button>
-        </CardFooter>
-      </Card>
+      />
 
-      {/* Pro Plan */}
-      <Card className="relative bg-gradient-to-br from-purple-900/80 to-indigo-900/80 border-purple-500/50 backdrop-blur-sm transform hover:scale-105 transition-all duration-300">
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-4 py-1 rounded-full text-sm flex items-center">
-          <Star className="h-4 w-4 mr-1" />
-          Premium Features
-        </div>
-        {subscription?.level === 'pro' && (
+      <PricingPlan
+        title="Pro"
+        description="Voor serieuze content creators"
+        price="€29,99"
+        interval="maand"
+        features={proFeatures}
+        priceId="price_1Qcv0UIBuO6WDytxyZGkcKxA"
+        isPopular={false}
+        isCurrentPlan={subscription?.level === 'pro'}
+        onUpgrade={handleUpgrade}
+        buttonText={subscription?.level === 'pro' ? 'Actief Abonnement' : 'Upgrade naar Pro'}
+        buttonDisabled={subscription?.level === 'pro'}
+        highlightText="Premium Features"
+        statusBadge={subscription?.level === 'pro' && (
           <div className="absolute -top-3 right-4 bg-green-600 text-white px-4 py-1 rounded-full text-sm flex items-center">
             <Shield className="w-4 h-4 mr-1" />
             Huidig Plan
           </div>
         )}
-        <CardHeader>
-          <h3 className="text-2xl font-bold text-white flex items-center">
-            Pro
-            <Zap className="h-5 w-5 ml-2 text-yellow-400" />
-          </h3>
-          <p className="text-purple-200">Voor serieuze content creators</p>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-4">
-            <span className="text-4xl font-bold">€29,99</span>
-            <span className="text-purple-200">/maand</span>
-          </div>
-          <div className="bg-purple-800/30 p-4 rounded-lg mb-6">
-            <p className="text-sm text-purple-100">
-              Verleg de grenzen van contentcreatie met ongelimiteerde mogelijkheden en toegang tot de krachtigste AI-modellen.
-            </p>
-          </div>
-          <ul className="space-y-3">
-            <li className="flex items-center">
-              <Check className="h-5 w-5 text-green-400 mr-2" />
-              <span className="font-semibold">Onbeperkt aantal woorden</span>
-            </li>
-            <li className="flex items-center">
-              <Check className="h-5 w-5 text-green-400 mr-2" />
-              <span>Premium AI modellen</span>
-            </li>
-            <li className="flex items-center">
-              <Check className="h-5 w-5 text-green-400 mr-2" />
-              <span>Geavanceerde tone-of-voice analyse</span>
-            </li>
-            <li className="flex items-center">
-              <Check className="h-5 w-5 text-green-400 mr-2" />
-              <span>Prioriteit support</span>
-            </li>
-            <li className="flex items-center">
-              <Check className="h-5 w-5 text-green-400 mr-2" />
-              <span>Custom branding opties</span>
-            </li>
-            <li className="flex items-center">
-              <Check className="h-5 w-5 text-green-400 mr-2" />
-              <span>API toegang</span>
-            </li>
-          </ul>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-4">
-          <Button 
-            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
-            onClick={() => handleUpgrade('price_1Qcv0UIBuO6WDytxyZGkcKxA')}
-            disabled={subscription?.level === 'pro'}
-          >
-            {subscription?.level === 'pro' ? 'Actief Abonnement' : 'Upgrade naar Pro'}
-          </Button>
-          <p className="text-xs text-center text-purple-300">
-            <Users className="h-4 w-4 inline mr-1" />
-            Sluit je aan bij 500+ Pro gebruikers
-          </p>
-        </CardFooter>
-      </Card>
+      />
     </div>
   );
 };
