@@ -19,41 +19,30 @@ export default function AuthPage() {
     };
     checkUser();
 
-    // Listen for auth state changes and errors
+    // Listen for auth state changes and handle errors
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
         navigate('/');
       }
       
-      // Handle auth errors
-      if (event === 'USER_DELETED' || event === 'SIGNED_OUT') {
+      if (event === 'SIGNED_OUT') {
         toast({
           title: "Uitgelogd",
           description: "Je bent succesvol uitgelogd.",
         });
       }
-    });
 
-    // Listen for auth errors
-    const errorListener = supabase.auth.onError((error) => {
-      if (error.message.includes('user_already_exists')) {
+      // Handle auth errors through the event
+      if (event === 'USER_DELETED') {
         toast({
-          title: "Account bestaat al",
-          description: "Dit e-mailadres is al geregistreerd. Probeer in te loggen.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Fout",
-          description: "Er is iets misgegaan. Probeer het opnieuw.",
-          variant: "destructive",
+          title: "Account verwijderd",
+          description: "Je account is succesvol verwijderd.",
         });
       }
     });
 
     return () => {
       subscription.unsubscribe();
-      errorListener.unsubscribe();
     };
   }, [navigate, toast]);
 
@@ -79,6 +68,22 @@ export default function AuthPage() {
           showLinks={true}
           redirectTo={window.location.origin}
           socialLayout="horizontal"
+          onError={(error) => {
+            // Handle specific error cases
+            if (error.message.includes('user_already_exists')) {
+              toast({
+                title: "Account bestaat al",
+                description: "Dit e-mailadres is al geregistreerd. Probeer in te loggen.",
+                variant: "destructive",
+              });
+            } else {
+              toast({
+                title: "Fout",
+                description: "Er is iets misgegaan. Probeer het opnieuw.",
+                variant: "destructive",
+              });
+            }
+          }}
         />
       </div>
     </div>
