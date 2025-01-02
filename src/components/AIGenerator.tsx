@@ -6,7 +6,7 @@ import { KeywordAnalysis } from './KeywordAnalysis';
 import { ContentConfiguration } from './ContentConfiguration';
 import { ToneAnalysis } from './ToneAnalysis';
 import { ContentGeneration } from './ContentGeneration';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 
 export default function AIGenerator() {
   const [state, setState] = useState<GeneratorState>({
@@ -25,8 +25,6 @@ export default function AIGenerator() {
     currentStep: 'website',
     generatedContent: ''
   });
-
-  const { toast } = useToast();
 
   const steps = ['Website Analysis', 'Keyword Analysis', 'Business Info', 'Tone of Voice', 'Content Generation'] as const;
 
@@ -96,7 +94,7 @@ export default function AIGenerator() {
             <ContentConfiguration state={state} updateState={updateState} />
           )}
           {state.currentStep === 'tone' && (
-            <ToneAnalysis state={state} updateState={updateState} />
+            <ToneAnalysis state={state} updateState={updateState} isPremium={false} />
           )}
           {state.currentStep === 'content' && (
             <ContentGeneration state={state} updateState={updateState} />

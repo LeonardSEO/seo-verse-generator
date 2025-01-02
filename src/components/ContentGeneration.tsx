@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { GeneratorState } from '../lib/types';
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import LoadingSpinner from './LoadingSpinner';
+import { researchKeyword } from '../lib/research';
 
 interface ContentGenerationProps {
   state: GeneratorState;
@@ -15,15 +16,19 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
   const handleGenerate = async () => {
     setIsGenerating(true);
     try {
-      // TODO: Implement content generation logic
+      // First perform all analysis
+      const research = await researchKeyword(state.mainKeyword);
+      updateState({ research });
+
+      // TODO: Implement content generation logic using the research results
       toast({
-        title: "Success",
         description: "Content is gegenereerd",
       });
     } catch (error) {
+      console.error('Error:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Er is een fout opgetreden tijdens het genereren van content",
+        description: error instanceof Error ? error.message : "Er is een fout opgetreden",
         variant: "destructive",
       });
     } finally {

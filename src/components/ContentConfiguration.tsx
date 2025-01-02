@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { GeneratorState, ContentType } from '../lib/types';
 
 interface ContentConfigurationProps {
@@ -42,6 +42,7 @@ export function ContentConfiguration({ state, updateState }: ContentConfiguratio
       });
       return false;
     }
+    updateState({ currentStep: 'tone' });
     return true;
   };
 
@@ -52,12 +53,6 @@ export function ContentConfiguration({ state, updateState }: ContentConfiguratio
         [field]: value
       }
     });
-  };
-
-  const handleNext = () => {
-    if (validateAndProceed()) {
-      updateState({ currentStep: 'tone' });
-    }
   };
 
   return (
@@ -107,10 +102,10 @@ export function ContentConfiguration({ state, updateState }: ContentConfiguratio
             value={state.contentType}
             onValueChange={(value) => updateState({ contentType: value })}
           >
-            <SelectTrigger>
+            <SelectTrigger className="w-full bg-white">
               <SelectValue placeholder="Selecteer type content" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white">
               {contentTypes.map((type) => (
                 <SelectItem key={type} value={type}>
                   {type}
@@ -121,7 +116,7 @@ export function ContentConfiguration({ state, updateState }: ContentConfiguratio
         </div>
 
         <button
-          onClick={handleNext}
+          onClick={validateAndProceed}
           className="w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary/90 transition-colors"
         >
           Volgende Stap

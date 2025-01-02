@@ -3,21 +3,32 @@ import { GeneratorState } from '../lib/types';
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import LoadingSpinner from './LoadingSpinner';
+import { Lock } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 
 interface ToneAnalysisProps {
   state: GeneratorState;
   updateState: (updates: Partial<GeneratorState>) => void;
+  isPremium: boolean;
 }
 
-export function ToneAnalysis({ state, updateState }: ToneAnalysisProps) {
+export function ToneAnalysis({ state, updateState, isPremium }: ToneAnalysisProps) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [sampleContent, setSampleContent] = useState('');
   const { toast } = useToast();
 
   const analyzeTone = async () => {
+    if (!isPremium) {
+      toast({
+        title: "Premium Feature",
+        description: "Deze functie is alleen beschikbaar voor premium gebruikers",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!sampleContent) {
       toast({
         title: "Fout",
@@ -36,10 +47,6 @@ export function ToneAnalysis({ state, updateState }: ToneAnalysisProps) {
       if (error) throw error;
 
       updateState({ toneOfVoice: data.tone });
-      toast({
-        title: "Success",
-        description: "Tone of voice succesvol geanalyseerd",
-      });
     } catch (error) {
       console.error('Error analyzing tone:', error);
       toast({
@@ -75,25 +82,6 @@ export function ToneAnalysis({ state, updateState }: ToneAnalysisProps) {
 
       <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="sampleContent">Voorbeeldtekst (optioneel)</Label>
-          <Textarea
-            id="sampleContent"
-            value={sampleContent}
-            onChange={(e) => setSampleContent(e.target.value)}
-            placeholder="Plak hier een stuk tekst van je website of een ander voorbeeld van je gewenste schrijfstijl"
-            className="min-h-[100px]"
-          />
-          <Button 
-            onClick={analyzeTone}
-            disabled={isAnalyzing || !sampleContent}
-            variant="secondary"
-            className="w-full"
-          >
-            {isAnalyzing ? <LoadingSpinner /> : "Analyseer Schrijfstijl"}
-          </Button>
-        </div>
-
-        <div className="space-y-2">
           <Label htmlFor="toneOfVoice">Schrijfstijl</Label>
           <Textarea
             id="toneOfVoice"
@@ -102,6 +90,40 @@ export function ToneAnalysis({ state, updateState }: ToneAnalysisProps) {
             placeholder="Bijvoorbeeld: Professioneel en zakelijk, maar toegankelijk en vriendelijk"
             className="min-h-[100px]"
           />
+        </div>
+
+        <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="flex items-center gap-2 mb-2">
+            <Lock className="w-4 h-4 text-gray-400" />
+            <h3 className="text-lg font-medium text-gray-700">
+              Premium Feature
+            </h3>
+          </div>
+
+          <div className={`space-y-3 ${isPremium ? '' : 'opacity-50'}`}>
+            <Label htmlFor="sampleContent">Voorbeeldtekst analyseren</Label>
+            <Textarea
+              id="sampleContent"
+              value={sampleContent}
+              onChange={(e) => setSampleContent(e.target.value)}
+              placeholder={isPremium ? "Plak hier een stuk tekst van je website of een ander voorbeeld van je gewenste schrijfstijl" : "Alleen beschikbaar voor premium gebruikers"}
+              className="min-h-[100px]"
+              disabled={!isPremium}
+            />
+            <Button 
+              onClick={analyzeTone}
+              disabled={isAnalyzing || !isPremium}
+              variant="secondary"
+              className="w-full"
+            >
+              {isAnalyzing ? <LoadingSpinner /> : "Analyseer Schrijfstijl"}
+            </Button>
+            {!isPremium && (
+              <p className="text-sm text-gray-500">
+                Upgrade naar premium om automatisch je tone of voice te laten analyseren
+              </p>
+            )}
+          </div>
         </div>
 
         <Button
