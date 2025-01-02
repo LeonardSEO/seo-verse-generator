@@ -39,17 +39,8 @@ export default function AdminDashboard() {
       if (error) throw error;
       
       if (data?.settings) {
-        const settingsData = data.settings as any;
-        setSettings({
-          models: Array.isArray(settingsData.models) ? settingsData.models : [],
-          systemPrompts: {
-            keywordResearch: settingsData.systemPrompts?.keywordResearch || '',
-            toneAnalysis: settingsData.systemPrompts?.toneAnalysis || '',
-            contentGeneration: settingsData.systemPrompts?.contentGeneration || ''
-          },
-          defaultFreeModel: settingsData.defaultFreeModel || '',
-          defaultPremiumModel: settingsData.defaultPremiumModel || ''
-        });
+        const settingsData = data.settings as AdminSettings;
+        setSettings(settingsData);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -70,7 +61,7 @@ export default function AdminDashboard() {
         .from('admin_settings')
         .upsert({ 
           id: 1, 
-          settings: settings,
+          settings: settings as any,
           updated_at: new Date().toISOString()
         });
 
@@ -168,10 +159,12 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <SystemPrompts
-          prompts={settings.systemPrompts}
-          onChange={handlePromptChange}
-        />
+        <div className="bg-white p-6 rounded-lg shadow">
+          <SystemPrompts
+            prompts={settings.systemPrompts}
+            onChange={handlePromptChange}
+          />
+        </div>
 
         <Button 
           onClick={saveSettings} 
