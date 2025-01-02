@@ -4,6 +4,8 @@ import { GeneratorState } from '../lib/types';
 import { WebsiteAnalysis } from './WebsiteAnalysis';
 import { KeywordAnalysis } from './KeywordAnalysis';
 import { ContentConfiguration } from './ContentConfiguration';
+import { ToneAnalysis } from './ToneAnalysis';
+import { ContentGeneration } from './ContentGeneration';
 import { useToast } from "@/components/ui/use-toast";
 
 export default function AIGenerator() {
@@ -39,7 +41,6 @@ export default function AIGenerator() {
   const currentStep = stepMap[state.currentStep];
 
   const updateState = async (updates: Partial<GeneratorState>) => {
-    // Temporarily removed auth check
     setState((prev) => ({ ...prev, ...updates }));
   };
 
@@ -93,6 +94,12 @@ export default function AIGenerator() {
           )}
           {state.currentStep === 'business' && (
             <ContentConfiguration state={state} updateState={updateState} />
+          )}
+          {state.currentStep === 'tone' && (
+            <ToneAnalysis state={state} updateState={updateState} />
+          )}
+          {state.currentStep === 'content' && (
+            <ContentGeneration state={state} updateState={updateState} />
           )}
         </div>
       </div>
