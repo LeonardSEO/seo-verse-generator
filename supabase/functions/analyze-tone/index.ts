@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -20,6 +21,32 @@ serve(async (req) => {
       throw new Error('OpenRouter API key not configured');
     }
 
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Fetch admin settings to get the default free model
+    console.log('Fetching admin settings...');
+    const { data: adminSettings, error: settingsError } = await supabase
+      .from('admin_settings')
+      .select('settings')
+      .single();
+
+    if (settingsError) {
+      console.error('Error fetching admin settings:', settingsError);
+      throw new Error('Failed to fetch admin settings');
+    }
+
+    const settings = adminSettings.settings as { defaultFreeModel: string };
+    const model = settings.defaultFreeModel;
+
+    if (!model) {
+      console.error('No default free model configured');
+      throw new Error('No default model configured');
+    }
+
+    console.log('Using model:', model);
     console.log('Making request to OpenRouter API...');
     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
@@ -30,7 +57,7 @@ serve(async (req) => {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
+        model: model,
         messages: [
           {
             role: "system",
