@@ -1,6 +1,6 @@
 export async function researchKeyword(keyword: string): Promise<string> {
   try {
-    const response = await fetch('https://44c57909-d9e2-41cb-9244-9cd4a443cb41.app.bhs.ai.cloud.ovh.net/custom_search', {
+    const response = await fetch('https://api.openperplex.ai/v1/custom_search', {
       method: 'POST',
       headers: {
         'X-API-Key': `${import.meta.env.VITE_OPENPERPLEX_API_KEY}`,
