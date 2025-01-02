@@ -1,6 +1,6 @@
 export async function researchKeyword(keyword: string): Promise<string> {
   try {
-    const response = await fetch('https://api.openperplex.ai/chat/completions', {
+    const response = await fetch('https://api.perplexity.ai/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${import.meta.env.VITE_OPENPERPLEX_API_KEY}`,
