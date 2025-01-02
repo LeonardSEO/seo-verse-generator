@@ -12,6 +12,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+
+type AdminSettings = Database['public']['Tables']['admin_settings']['Row'];
 
 interface Settings {
   defaultModel: string;
@@ -41,14 +44,14 @@ export default function AdminDashboard() {
   const loadSettings = async () => {
     setIsLoading(true);
     try {
-      const { data: { settings }, error } = await supabase
+      const { data, error } = await supabase
         .from('admin_settings')
         .select('*')
         .single();
 
       if (error) throw error;
-      if (settings) {
-        setSettings(settings);
+      if (data?.settings) {
+        setSettings(data.settings as Settings);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -67,7 +70,11 @@ export default function AdminDashboard() {
     try {
       const { error } = await supabase
         .from('admin_settings')
-        .upsert({ id: 1, settings });
+        .upsert({ 
+          id: 1, 
+          settings: settings,
+          updated_at: new Date().toISOString()
+        });
 
       if (error) throw error;
 
