@@ -11,16 +11,9 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
-  }
-
   try {
     const { keyword } = await req.json()
+    console.log('Received keyword research request for:', keyword)
     
     if (!keyword) {
       return new Response(
@@ -68,7 +61,7 @@ serve(async (req) => {
     }
 
     const data = await response.json()
-    console.log('OpenPerplex response received')
+    console.log('OpenPerplex API response:', JSON.stringify(data, null, 2))
 
     return new Response(
       JSON.stringify(data),
