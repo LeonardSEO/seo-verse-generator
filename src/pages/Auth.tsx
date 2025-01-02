@@ -23,10 +23,21 @@ export default function AuthPage() {
         <h1 className="text-2xl font-bold text-center mb-6 text-primary">Login om door te gaan</h1>
         <Auth
           supabaseClient={supabase}
-          appearance={{ theme: ThemeSupa }}
+          appearance={{ 
+            theme: ThemeSupa,
+            variables: {
+              default: {
+                colors: {
+                  brand: '#2563eb',
+                  brandAccent: '#1d4ed8',
+                }
+              }
+            }
+          }}
           providers={['github']}
+          view="sign_in"
+          showLinks={false}
           redirectTo={window.location.origin}
-          theme="light"
         />
       </div>
     </div>
