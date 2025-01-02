@@ -11,6 +11,17 @@ interface ContentGenerationProps {
   updateState: (updates: Partial<GeneratorState>) => void;
 }
 
+interface AdminSettings {
+  settings: {
+    defaultModel: string;
+    systemPrompts: {
+      keywordResearch: string;
+      toneAnalysis: string;
+      contentGeneration: string;
+    };
+  };
+}
+
 export function ContentGeneration({ state, updateState }: ContentGenerationProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const { toast } = useToast();
@@ -46,7 +57,8 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
         .select('settings')
         .single();
 
-      const selectedModel = adminSettings?.settings?.selectedModel || 'gpt-4';
+      const settings = (adminSettings?.settings as AdminSettings['settings']) || { defaultModel: 'gpt-4o-mini' };
+      const selectedModel = settings.defaultModel;
 
       const { data, error } = await supabase.functions.invoke('generate-content', {
         body: { 
