@@ -10,7 +10,7 @@ const corsHeaders = {
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
@@ -24,6 +24,7 @@ serve(async (req) => {
       }
     )
 
+    // Get the session or user object
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
     
     if (userError || !user) {
@@ -76,6 +77,7 @@ serve(async (req) => {
         .insert([{ id: user.id, stripe_customer_id: customerId }])
     }
 
+    console.log('Creating checkout session...')
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
@@ -90,6 +92,7 @@ serve(async (req) => {
       },
     })
 
+    console.log('Checkout session created:', session.id)
     return new Response(
       JSON.stringify({ url: session.url }),
       {
