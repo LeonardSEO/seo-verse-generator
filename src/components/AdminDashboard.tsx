@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Settings, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import type { Json } from "@/integrations/supabase/types";
 
 interface Model {
   id: string;
@@ -27,15 +28,17 @@ interface Settings {
   };
 }
 
+const defaultSettings: Settings = {
+  models: [],
+  systemPrompts: {
+    keywordResearch: '',
+    toneAnalysis: '',
+    contentGeneration: ''
+  }
+};
+
 export default function AdminDashboard() {
-  const [settings, setSettings] = useState<Settings>({
-    models: [],
-    systemPrompts: {
-      keywordResearch: '',
-      toneAnalysis: '',
-      contentGeneration: ''
-    }
-  });
+  const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(false);
   const [newModel, setNewModel] = useState<Model>({
     id: '',
@@ -61,7 +64,18 @@ export default function AdminDashboard() {
       if (error) throw error;
       
       if (data?.settings) {
-        setSettings(data.settings as Settings);
+        // Safely type cast the data
+        const settingsData = data.settings as Json;
+        if (typeof settingsData === 'object' && settingsData !== null) {
+          setSettings({
+            models: Array.isArray((settingsData as any).models) ? (settingsData as any).models : [],
+            systemPrompts: {
+              keywordResearch: (settingsData as any).systemPrompts?.keywordResearch || '',
+              toneAnalysis: (settingsData as any).systemPrompts?.toneAnalysis || '',
+              contentGeneration: (settingsData as any).systemPrompts?.contentGeneration || ''
+            }
+          });
+        }
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -82,7 +96,7 @@ export default function AdminDashboard() {
         .from('admin_settings')
         .upsert({ 
           id: 1, 
-          settings,
+          settings: settings as Json,
           updated_at: new Date().toISOString()
         });
 
