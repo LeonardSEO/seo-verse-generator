@@ -31,14 +31,6 @@ export default function AuthPage() {
           description: "Je bent succesvol uitgelogd.",
         });
       }
-
-      // Handle auth errors through the event
-      if (event === 'USER_DELETED') {
-        toast({
-          title: "Account verwijderd",
-          description: "Je account is succesvol verwijderd.",
-        });
-      }
     });
 
     return () => {
@@ -68,21 +60,29 @@ export default function AuthPage() {
           showLinks={true}
           redirectTo={window.location.origin}
           socialLayout="horizontal"
-          onError={(error) => {
-            // Handle specific error cases
-            if (error.message.includes('user_already_exists')) {
-              toast({
-                title: "Account bestaat al",
-                description: "Dit e-mailadres is al geregistreerd. Probeer in te loggen.",
-                variant: "destructive",
-              });
-            } else {
-              toast({
-                title: "Fout",
-                description: "Er is iets misgegaan. Probeer het opnieuw.",
-                variant: "destructive",
-              });
-            }
+          localization={{
+            variables: {
+              sign_up: {
+                email_label: 'Email',
+                password_label: 'Wachtwoord',
+                email_input_placeholder: 'Jouw email',
+                password_input_placeholder: 'Jouw wachtwoord',
+                button_label: 'Registreren',
+                loading_button_label: 'Registreren...',
+                social_provider_text: 'Inloggen met {{provider}}',
+                link_text: 'Heb je nog geen account? Registreer',
+              },
+              sign_in: {
+                email_label: 'Email',
+                password_label: 'Wachtwoord',
+                email_input_placeholder: 'Jouw email',
+                password_input_placeholder: 'Jouw wachtwoord',
+                button_label: 'Inloggen',
+                loading_button_label: 'Inloggen...',
+                social_provider_text: 'Inloggen met {{provider}}',
+                link_text: 'Al een account? Login',
+              },
+            },
           }}
         />
       </div>
