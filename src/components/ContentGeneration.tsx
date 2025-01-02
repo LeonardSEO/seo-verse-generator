@@ -3,7 +3,7 @@ import { GeneratorState } from '../lib/types';
 import { useToast } from "@/hooks/use-toast";
 import LoadingSpinner from './LoadingSpinner';
 import { researchKeyword } from '../lib/research';
-import { extractUrlsFromSitemap } from '../lib/sitemap';
+import { findSitemapUrl, extractUrlsFromSitemap } from '../lib/sitemap';
 import { supabase } from "@/integrations/supabase/client";
 
 interface ContentGenerationProps {
@@ -38,11 +38,20 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
 
     setIsGenerating(true);
     try {
-      // Perform keyword research
+      // First analyze the website and get sitemap URLs
+      const sitemapUrl = await findSitemapUrl(state.websiteUrl);
+      let urls: string[] = [];
+      
+      if (sitemapUrl) {
+        urls = await extractUrlsFromSitemap(sitemapUrl);
+        updateState({ selectedUrls: urls });
+      }
+
+      // Then perform keyword research
       const research = await researchKeyword(state.mainKeyword);
       updateState({ research });
 
-      // Get admin settings for the model
+      // Finally generate content using OpenRouter
       const { data: adminSettings } = await supabase
         .from('admin_settings')
         .select('settings')
@@ -51,11 +60,11 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
       const settings = (adminSettings?.settings as AdminSettings['settings']) || { defaultModel: 'gpt-4o-mini' };
       const selectedModel = settings.defaultModel;
 
-      // Generate content using OpenRouter
       const { data, error } = await supabase.functions.invoke('generate-content', {
         body: { 
           state: {
             ...state,
+            selectedUrls: urls,
             research
           },
           model: selectedModel
@@ -64,7 +73,10 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
 
       if (error) throw error;
 
-      updateState({ generatedContent: data.content });
+      updateState({ 
+        generatedContent: data.content,
+        selectedUrls: urls
+      });
 
     } catch (error) {
       console.error('Error:', error);

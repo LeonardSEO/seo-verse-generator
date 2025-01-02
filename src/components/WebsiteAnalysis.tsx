@@ -5,7 +5,6 @@ import { GeneratorState } from '../lib/types';
 import { useToast } from "@/components/ui/use-toast";
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { findSitemapUrl } from '../lib/sitemap';
 
 interface WebsiteAnalysisProps {
   state: GeneratorState;
@@ -14,7 +13,6 @@ interface WebsiteAnalysisProps {
 
 export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
   const [urlInput, setUrlInput] = useState('');
-  const [isValidating, setIsValidating] = useState(false);
   const { toast } = useToast();
 
   const isValidUrl = (url: string) => {
@@ -26,7 +24,7 @@ export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
     }
   };
 
-  const handleUrlSubmit = async () => {
+  const handleUrlSubmit = () => {
     if (!urlInput.trim()) {
       toast({
         title: "Fout",
@@ -45,33 +43,12 @@ export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
       return;
     }
 
-    setIsValidating(true);
-    try {
-      const validUrl = urlInput.startsWith('http') ? urlInput : `https://${urlInput}`;
-      const sitemapUrl = await findSitemapUrl(validUrl);
-      
-      if (!sitemapUrl) {
-        toast({
-          title: "Waarschuwing",
-          description: "Geen sitemap gevonden voor deze website. De analyse zal beperkt zijn.",
-          variant: "default",
-        });
-      }
-
-      updateState({ 
-        selectedUrls: [validUrl],
-        websiteUrl: validUrl,
-        currentStep: 'keyword'
-      });
-    } catch (error) {
-      toast({
-        title: "Fout",
-        description: "Er is een fout opgetreden bij het valideren van de website",
-        variant: "destructive",
-      });
-    } finally {
-      setIsValidating(false);
-    }
+    const validUrl = urlInput.startsWith('http') ? urlInput : `https://${urlInput}`;
+    updateState({ 
+      selectedUrls: [validUrl],
+      websiteUrl: validUrl,
+      currentStep: 'keyword'
+    });
   };
 
   return (
@@ -101,9 +78,8 @@ export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
         <Button
           onClick={handleUrlSubmit}
           className="w-full"
-          disabled={isValidating}
         >
-          {isValidating ? "Website Valideren..." : "Website URL Toevoegen"}
+          Website URL Toevoegen
         </Button>
 
         {state.selectedUrls.length > 0 && (
