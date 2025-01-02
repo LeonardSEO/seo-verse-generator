@@ -18,45 +18,35 @@ serve(async (req) => {
     // Get the authorization header
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
-      console.error('No authorization header')
       throw new Error('No authorization header')
     }
 
-    // Create Supabase client with the JWT from the authorization header
-    const supabaseClient = createClient(
+    // Create Supabase client with admin privileges
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
 
-    // Get authenticated user
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+    // Get user from the JWT token
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
     
     if (userError || !user) {
-      console.error('Authentication error:', userError)
+      console.error('User fetch error:', userError)
       throw new Error('Unauthorized')
     }
 
     console.log('Authenticated user:', user.id)
 
-    // Get customer's stripe_customer_id
-    const { data: customer, error: customerError } = await supabaseClient
+    // Get customer from database
+    const { data: customer, error: customerError } = await supabaseAdmin
       .from('customers')
       .select('stripe_customer_id')
       .eq('id', user.id)
       .single()
 
-    if (customerError) {
+    if (customerError || !customer?.stripe_customer_id) {
       console.error('Customer fetch error:', customerError)
-      throw new Error('Error fetching customer')
-    }
-
-    if (!customer?.stripe_customer_id) {
-      console.error('No stripe_customer_id found for user:', user.id)
       throw new Error('No customer found')
     }
 
