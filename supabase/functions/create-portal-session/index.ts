@@ -17,6 +17,7 @@ serve(async (req) => {
     // Get the authorization header
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
+      console.error('No authorization header')
       throw new Error('No authorization header')
     }
 
@@ -56,10 +57,14 @@ serve(async (req) => {
 
     console.log('Found customer:', customer.stripe_customer_id)
 
+    // Get the origin from the request headers
+    const origin = req.headers.get('origin') || 'https://seo-verse-generator.lovable.app'
+    console.log('Using return URL with origin:', origin)
+
     // Create portal session
     const { url } = await stripe.billingPortal.sessions.create({
       customer: customer.stripe_customer_id,
-      return_url: `${req.headers.get('origin')}/settings`,
+      return_url: `${origin}/settings`,
     })
 
     console.log('Created portal session with URL:', url)
