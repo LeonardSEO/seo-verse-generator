@@ -17,18 +17,27 @@ export const PricingPlans = ({ handleCheckout }: PricingPlansProps) => {
   const navigate = useNavigate();
 
   const handleUpgrade = async (priceId: string) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Login vereist",
+          description: "Log eerst in om een abonnement af te sluiten",
+          variant: "destructive",
+        });
+        navigate('/auth');
+        return;
+      }
+
+      await handleCheckout(priceId);
+    } catch (error) {
+      console.error('Upgrade error:', error);
       toast({
-        title: "Login vereist",
-        description: "Log eerst in om een abonnement af te sluiten",
+        title: "Er is iets misgegaan",
+        description: "Probeer het later opnieuw",
         variant: "destructive",
       });
-      navigate('/auth');
-      return;
     }
-
-    await handleCheckout(priceId);
   };
 
   const handleManageSubscription = async () => {
@@ -47,8 +56,7 @@ export const PricingPlans = ({ handleCheckout }: PricingPlansProps) => {
       const { data, error } = await supabase.functions.invoke('create-portal-session', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${session.access_token}`,
         },
       });
       

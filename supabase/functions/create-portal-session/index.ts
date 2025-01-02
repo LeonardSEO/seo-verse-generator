@@ -15,13 +15,20 @@ serve(async (req) => {
   }
 
   try {
-    // Create Supabase client with proper authorization
+    // Get the authorization header
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      console.error('No authorization header')
+      throw new Error('No authorization header')
+    }
+
+    // Create Supabase client with the JWT from the authorization header
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
+          headers: { Authorization: authHeader },
         },
       }
     )
@@ -30,11 +37,11 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
     
     if (userError || !user) {
-      console.error('Authentication error:', userError);
+      console.error('Authentication error:', userError)
       throw new Error('Unauthorized')
     }
 
-    console.log('Authenticated user:', user.id);
+    console.log('Authenticated user:', user.id)
 
     // Get customer's stripe_customer_id
     const { data: customer, error: customerError } = await supabaseClient
@@ -44,16 +51,16 @@ serve(async (req) => {
       .single()
 
     if (customerError) {
-      console.error('Customer fetch error:', customerError);
-      throw new Error('Error fetching customer');
+      console.error('Customer fetch error:', customerError)
+      throw new Error('Error fetching customer')
     }
 
     if (!customer?.stripe_customer_id) {
-      console.error('No stripe_customer_id found for user:', user.id);
-      throw new Error('No customer found');
+      console.error('No stripe_customer_id found for user:', user.id)
+      throw new Error('No customer found')
     }
 
-    console.log('Found customer:', customer.stripe_customer_id);
+    console.log('Found customer:', customer.stripe_customer_id)
 
     // Initialize Stripe
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
@@ -66,7 +73,7 @@ serve(async (req) => {
       return_url: `${req.headers.get('origin')}/settings`,
     })
 
-    console.log('Created portal session with URL:', url);
+    console.log('Created portal session with URL:', url)
 
     return new Response(
       JSON.stringify({ url }),
@@ -76,7 +83,7 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Portal session error:', error);
+    console.error('Portal session error:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       {
