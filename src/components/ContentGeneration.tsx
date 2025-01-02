@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Copy, CheckCheck } from 'lucide-react';
 import { Button } from './ui/button';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useNavigate } from 'react-router-dom';
 
 interface ContentGenerationProps {
@@ -163,7 +164,9 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
               </Button>
             </div>
             <div className="prose prose-lg max-w-none p-6 bg-white rounded-lg shadow-sm border">
-              <ReactMarkdown>{state.generatedContent}</ReactMarkdown>
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {state.generatedContent}
+              </ReactMarkdown>
             </div>
           </div>
         )}

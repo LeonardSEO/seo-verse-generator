@@ -6,12 +6,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { Upload } from 'lucide-react';
 
 export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [fullName, setFullName] = useState('');
   const [saving, setSaving] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -23,21 +26,58 @@ export default function Settings() {
         return;
       }
       
-      // Load user profile
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('id', session.user.id)
-        .single();
-
-      if (profile) {
-        setFullName(profile.username || '');
-      }
+      setFullName(session.user.user_metadata?.full_name || '');
+      setAvatarUrl(session.user.user_metadata?.avatar_url || null);
       setLoading(false);
     };
 
     checkAuth();
   }, [navigate]);
+
+  const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      setSaving(true);
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Niet ingelogd');
+
+      const fileExt = file.name.split('.').pop();
+      const filePath = `${session.user.id}/${crypto.randomUUID()}.${fileExt}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { avatar_url: publicUrl }
+      });
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+      toast({
+        title: "Avatar geüpload!",
+        description: "Je profielfoto is succesvol bijgewerkt.",
+      });
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast({
+        title: "Fout",
+        description: "Er is een fout opgetreden bij het uploaden van je avatar.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -47,10 +87,9 @@ export default function Settings() {
         throw new Error('Niet ingelogd');
       }
 
-      const { error } = await supabase
-        .from('profiles')
-        .update({ username: fullName })
-        .eq('id', session.user.id);
+      const { error } = await supabase.auth.updateUser({
+        data: { full_name: fullName }
+      });
 
       if (error) throw error;
 
@@ -90,7 +129,33 @@ export default function Settings() {
               Beheer je profielinformatie
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
+            <div className="flex flex-col items-center space-y-4">
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={avatarUrl || undefined} />
+                <AvatarFallback className="bg-primary text-primary-foreground text-xl">
+                  {fullName?.charAt(0).toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex items-center space-x-2">
+                <Input
+                  type="file"
+                  accept="image/*"
+                  onChange={uploadAvatar}
+                  className="hidden"
+                  id="avatar-upload"
+                  disabled={saving}
+                />
+                <Label
+                  htmlFor="avatar-upload"
+                  className="cursor-pointer inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
+                >
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Avatar
+                </Label>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="name">Naam</Label>
               <Input
@@ -100,7 +165,7 @@ export default function Settings() {
                 placeholder="Je naam"
               />
               <p className="text-sm text-gray-500">
-                Deze naam wordt gebruikt voor je profiel avatar
+                Deze naam wordt gebruikt voor je profiel
               </p>
             </div>
             

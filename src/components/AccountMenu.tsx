@@ -72,7 +72,7 @@ export default function AccountMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="bg-primary">
+          <Avatar className="h-10 w-10 bg-primary">
             <AvatarImage src={user.user_metadata?.avatar_url} />
             <AvatarFallback className="bg-primary text-primary-foreground">
               {user.user_metadata?.full_name?.charAt(0).toUpperCase() || 
@@ -81,8 +81,8 @@ export default function AccountMenu() {
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end">
-        <DropdownMenuLabel>
+      <DropdownMenuContent className="w-56 bg-white dark:bg-gray-800" align="end">
+        <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">
               {user.user_metadata?.full_name || 'Gebruiker'}
