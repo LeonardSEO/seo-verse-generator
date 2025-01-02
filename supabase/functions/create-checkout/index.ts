@@ -8,13 +8,11 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    // Create Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -25,63 +23,64 @@ serve(async (req) => {
       }
     )
 
-    // Get the user
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
     
     if (userError || !user) {
       throw new Error('Unauthorized')
     }
 
-    // Get the price ID from the request
     const { priceId } = await req.json()
 
     if (!priceId) {
       throw new Error('Price ID is required')
     }
 
-    // Initialize Stripe
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2023-10-16',
     })
 
-    // Get or create customer
-    const { data: customers, error: customerError } = await supabaseClient
+    // First check if customer exists
+    const { data: existingCustomer } = await supabaseClient
       .from('customers')
       .select('stripe_customer_id')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
-    if (customerError && customerError.code !== 'PGRST116') {
-      console.error('Error fetching customer:', customerError)
-      throw new Error('Error fetching customer')
-    }
-
-    let customerId = customers?.stripe_customer_id
+    let customerId = existingCustomer?.stripe_customer_id
 
     if (!customerId) {
-      // Create a new customer in Stripe
-      const customer = await stripe.customers.create({
-        email: user.email,
-        metadata: {
-          supabase_user_id: user.id,
-        },
-      })
-      customerId = customer.id
+      console.log('Creating new Stripe customer for user:', user.id)
+      
+      try {
+        // Create a new customer in Stripe
+        const customer = await stripe.customers.create({
+          email: user.email,
+          metadata: {
+            supabase_user_id: user.id,
+          },
+        })
+        customerId = customer.id
 
-      // Store the customer ID in Supabase
-      const { error: insertError } = await supabaseClient
-        .from('customers')
-        .insert([{ id: user.id, stripe_customer_id: customerId }])
+        // Store the customer ID in Supabase
+        const { error: insertError } = await supabaseClient
+          .from('customers')
+          .insert([{ 
+            id: user.id, 
+            stripe_customer_id: customerId 
+          }])
 
-      if (insertError) {
-        console.error('Error inserting customer:', insertError)
-        throw new Error('Error creating customer')
+        if (insertError) {
+          console.error('Error inserting customer:', insertError)
+          throw new Error(`Failed to save customer: ${insertError.message}`)
+        }
+      } catch (stripeError) {
+        console.error('Stripe customer creation error:', stripeError)
+        throw new Error('Failed to create Stripe customer')
       }
     }
 
     console.log('Creating checkout session for customer:', customerId)
     
-    // Create Checkout Session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
