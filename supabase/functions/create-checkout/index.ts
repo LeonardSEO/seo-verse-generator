@@ -1,11 +1,11 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import Stripe from 'https://esm.sh/stripe@12.0.0?target=deno'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from '@supabase/supabase-js'
+import Stripe from 'stripe'
+import { corsHeaders } from '../_shared/cors.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+  apiVersion: '2023-10-16',
+})
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -31,47 +31,45 @@ serve(async (req) => {
       throw new Error('Unauthorized')
     }
 
+    // Get the price ID from the request
     const { priceId } = await req.json()
-    
+
     if (!priceId) {
       throw new Error('Price ID is required')
     }
 
     // Check if user already has an active subscription
-    const { data: existingSubscription } = await supabaseClient
+    const { data: subscriptions } = await supabaseClient
       .from('subscriptions')
       .select('*')
       .eq('user_id', user.id)
       .eq('status', 'active')
       .single()
 
-    if (existingSubscription) {
+    if (subscriptions) {
       throw new Error('User already has an active subscription')
     }
 
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
-      apiVersion: '2023-10-16',
-      httpClient: Stripe.createFetchHttpClient(),
-    })
-
     // Get or create customer
-    const { data: customerData } = await supabaseClient
+    const { data: customers } = await supabaseClient
       .from('customers')
       .select('stripe_customer_id')
       .eq('id', user.id)
       .single()
 
-    let customerId = customerData?.stripe_customer_id
+    let customerId = customers?.stripe_customer_id
 
     if (!customerId) {
+      // Create a new customer in Stripe
       const customer = await stripe.customers.create({
         email: user.email,
         metadata: {
-          supabaseUUID: user.id,
+          supabase_user_id: user.id,
         },
       })
       customerId = customer.id
 
+      // Store the customer ID in Supabase
       await supabaseClient
         .from('customers')
         .insert([{ id: user.id, stripe_customer_id: customerId }])
@@ -82,12 +80,12 @@ serve(async (req) => {
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
-      success_url: `${req.headers.get('origin')}/`,
+      success_url: `${req.headers.get('origin')}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get('origin')}/pricing`,
-      trial_period_days: 7,
       subscription_data: {
+        trial_period_days: 7,
         metadata: {
-          supabaseUUID: user.id,
+          supabase_user_id: user.id,
         },
       },
     })
@@ -101,7 +99,6 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Checkout error:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       {
