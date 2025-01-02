@@ -7,6 +7,7 @@ import { ModelList } from './admin/ModelList';
 import { AddModelForm } from './admin/AddModelForm';
 import { SystemPrompts } from './admin/SystemPrompts';
 import type { Settings as AdminSettings, Model } from './types/admin';
+import { useNavigate } from 'react-router-dom';
 
 const defaultSettings: AdminSettings = {
   models: [],
@@ -23,14 +24,41 @@ export default function AdminDashboard() {
   const [settings, setSettings] = useState<AdminSettings>(defaultSettings);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
+    checkUser();
     loadSettings();
   }, []);
+
+  const checkUser = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      navigate('/auth');
+      return;
+    }
+
+    // Check if user is admin by trying to get their email
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.email !== 'leonardvanhemert@gmail.com') {
+      toast({
+        title: "Unauthorized",
+        description: "You don't have permission to access this page",
+        variant: "destructive",
+      });
+      navigate('/');
+      return;
+    }
+  };
 
   const loadSettings = async () => {
     setIsLoading(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Not authenticated');
+      }
+
       const { data, error } = await supabase
         .from('admin_settings')
         .select('*')
