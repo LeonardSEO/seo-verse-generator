@@ -14,9 +14,18 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
   const { toast } = useToast();
 
   const handleGenerate = async () => {
+    if (!state.mainKeyword) {
+      toast({
+        title: "Fout",
+        description: "Voer eerst een keyword in",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsGenerating(true);
     try {
-      // First perform all analysis
+      // First perform keyword research
       const research = await researchKeyword(state.mainKeyword);
       updateState({ research });
 

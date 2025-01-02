@@ -6,7 +6,6 @@ import { KeywordAnalysis } from './KeywordAnalysis';
 import { ContentConfiguration } from './ContentConfiguration';
 import { ToneAnalysis } from './ToneAnalysis';
 import { ContentGeneration } from './ContentGeneration';
-import { useToast } from "@/hooks/use-toast";
 
 export default function AIGenerator() {
   const [state, setState] = useState<GeneratorState>({

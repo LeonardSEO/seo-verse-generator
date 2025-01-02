@@ -1,10 +1,6 @@
-import { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { GeneratorState } from '../lib/types';
-import { useToast } from "@/components/ui/use-toast";
-import LoadingSpinner from './LoadingSpinner';
-import { researchKeyword } from '../lib/research';
 
 interface KeywordAnalysisProps {
   state: GeneratorState;
@@ -12,40 +8,11 @@ interface KeywordAnalysisProps {
 }
 
 export function KeywordAnalysis({ state, updateState }: KeywordAnalysisProps) {
-  const [isResearching, setIsResearching] = useState(false);
-  const { toast } = useToast();
-
-  const handleResearch = async () => {
+  const handleNext = () => {
     if (!state.mainKeyword) {
-      toast({
-        title: "Fout",
-        description: "Voer eerst een keyword in",
-        variant: "destructive",
-      });
       return;
     }
-
-    setIsResearching(true);
-    try {
-      const research = await researchKeyword(state.mainKeyword);
-      updateState({ 
-        research,
-        currentStep: 'business'
-      });
-      
-      toast({
-        title: "Success",
-        description: "Keyword onderzoek succesvol afgerond",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Er is een fout opgetreden tijdens het keyword onderzoek",
-        variant: "destructive",
-      });
-    } finally {
-      setIsResearching(false);
-    }
+    updateState({ currentStep: 'business' });
   };
 
   return (
@@ -67,21 +34,11 @@ export function KeywordAnalysis({ state, updateState }: KeywordAnalysisProps) {
         />
 
         <Button
-          onClick={handleResearch}
-          disabled={isResearching}
+          onClick={handleNext}
           className="w-full"
         >
-          {isResearching ? <LoadingSpinner /> : "Analyseer Keyword"}
+          Volgende
         </Button>
-
-        {state.research && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-sm font-medium mb-2">Onderzoeksresultaten</h3>
-            <div className="text-sm text-gray-600 whitespace-pre-wrap">
-              {state.research}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
