@@ -14,6 +14,7 @@ serve(async (req) => {
   }
 
   try {
+    // Create Supabase client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -24,7 +25,7 @@ serve(async (req) => {
       }
     )
 
-    // Get the session or user object
+    // Get the user
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
     
     if (userError || !user) {
@@ -38,16 +39,22 @@ serve(async (req) => {
       throw new Error('Price ID is required')
     }
 
+    // Initialize Stripe
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+      apiVersion: '2023-10-16',
+    })
+
     // Get or create customer
-    const { data: customers } = await supabaseClient
+    const { data: customers, error: customerError } = await supabaseClient
       .from('customers')
       .select('stripe_customer_id')
       .eq('id', user.id)
       .single()
 
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-      apiVersion: '2023-10-16',
-    })
+    if (customerError && customerError.code !== 'PGRST116') {
+      console.error('Error fetching customer:', customerError)
+      throw new Error('Error fetching customer')
+    }
 
     let customerId = customers?.stripe_customer_id
 
@@ -62,12 +69,19 @@ serve(async (req) => {
       customerId = customer.id
 
       // Store the customer ID in Supabase
-      await supabaseClient
+      const { error: insertError } = await supabaseClient
         .from('customers')
         .insert([{ id: user.id, stripe_customer_id: customerId }])
+
+      if (insertError) {
+        console.error('Error inserting customer:', insertError)
+        throw new Error('Error creating customer')
+      }
     }
 
-    console.log('Creating checkout session...')
+    console.log('Creating checkout session for customer:', customerId)
+    
+    // Create Checkout Session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
@@ -83,6 +97,7 @@ serve(async (req) => {
     })
 
     console.log('Checkout session created:', session.id)
+    
     return new Response(
       JSON.stringify({ url: session.url }),
       {
@@ -91,7 +106,7 @@ serve(async (req) => {
       }
     )
   } catch (error) {
-    console.error('Error creating checkout session:', error)
+    console.error('Error in create-checkout function:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       {
