@@ -5,6 +5,12 @@ import LoadingSpinner from './LoadingSpinner';
 import { researchKeyword } from '../lib/research';
 import { findSitemapUrl, extractUrlsFromSitemap } from '../lib/sitemap';
 import { supabase } from "@/integrations/supabase/client";
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import { Markdown } from 'tiptap-markdown';
+import Link from '@tiptap/extension-link';
+import { Copy, CheckCheck } from 'lucide-react';
+import { Button } from './ui/button';
 
 interface ContentGenerationProps {
   state: GeneratorState;
@@ -19,7 +25,40 @@ interface AdminSettings {
 
 export function ContentGeneration({ state, updateState }: ContentGenerationProps) {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
   const { toast } = useToast();
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Markdown,
+      Link.configure({
+        openOnClick: true,
+        HTMLAttributes: {
+          class: 'text-primary hover:text-primary/80 underline'
+        }
+      })
+    ],
+    content: state.generatedContent || '',
+    editable: false,
+    editorProps: {
+      attributes: {
+        class: 'prose prose-lg max-w-none focus:outline-none prose-headings:text-gray-900 prose-p:text-gray-700 prose-a:text-primary prose-strong:text-gray-900 prose-code:text-primary prose-code:bg-gray-100 prose-code:rounded prose-code:px-1'
+      }
+    }
+  });
+
+  const handleCopy = async () => {
+    if (state.generatedContent) {
+      await navigator.clipboard.writeText(state.generatedContent);
+      setIsCopied(true);
+      toast({
+        title: "Gekopieerd!",
+        description: "De content is naar je klembord gekopieerd.",
+      });
+      setTimeout(() => setIsCopied(false), 2000);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!state.mainKeyword || !state.websiteUrl) {
@@ -67,10 +106,15 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
 
       if (error) throw error;
 
+      const content = data.content;
       updateState({ 
-        generatedContent: data.content,
+        generatedContent: content,
         selectedUrls: urls
       });
+
+      if (editor) {
+        editor.commands.setContent(content);
+      }
 
     } catch (error) {
       console.error('Error:', error);
@@ -103,9 +147,31 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
         </button>
 
         {state.generatedContent && (
-          <div className="mt-6 p-4 bg-white rounded-lg shadow">
-            <h3 className="text-lg font-medium mb-2">Gegenereerde Content</h3>
-            <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: state.generatedContent }} />
+          <div className="mt-6 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">Gegenereerde Content</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopy}
+                className="flex items-center gap-2"
+              >
+                {isCopied ? (
+                  <>
+                    <CheckCheck className="h-4 w-4" />
+                    Gekopieerd
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-4 w-4" />
+                    Kopieer
+                  </>
+                )}
+              </Button>
+            </div>
+            <div className="prose prose-lg max-w-none p-6 bg-white rounded-lg shadow-sm border">
+              <EditorContent editor={editor} />
+            </div>
           </div>
         )}
       </div>
