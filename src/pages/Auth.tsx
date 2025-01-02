@@ -16,7 +16,7 @@ export default function AuthPage() {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate('/');
+        navigate('/pricing');
       }
     };
     checkUser();
@@ -24,7 +24,7 @@ export default function AuthPage() {
     // Listen for auth state changes and handle errors
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN') {
-        navigate('/');
+        navigate('/pricing');
       }
       
       if (event === 'SIGNED_OUT') {

@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import AuthPage from "./pages/Auth";
 import AdminPage from "./pages/Admin";
 import SettingsPage from "./pages/Settings";
+import PricingPage from "./pages/Pricing";
 import AuthGuard from "./components/AuthGuard";
 
 const queryClient = new QueryClient();
@@ -21,6 +22,7 @@ const App = () => {
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/pricing" element={<PricingPage />} />
             <Route
               path="/admin"
               element={
