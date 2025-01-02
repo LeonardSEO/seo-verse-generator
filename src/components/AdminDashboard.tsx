@@ -50,8 +50,17 @@ export default function AdminDashboard() {
         .single();
 
       if (error) throw error;
-      if (data?.settings) {
-        setSettings(data.settings as Settings);
+      
+      // Safely type cast the JSON data
+      if (data?.settings && typeof data.settings === 'object') {
+        const settingsData = data.settings as unknown as Settings;
+        if (
+          'defaultModel' in settingsData && 
+          'systemPrompts' in settingsData && 
+          typeof settingsData.systemPrompts === 'object'
+        ) {
+          setSettings(settingsData);
+        }
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -72,7 +81,7 @@ export default function AdminDashboard() {
         .from('admin_settings')
         .upsert({ 
           id: 1, 
-          settings: settings,
+          settings: settings as unknown as Json,
           updated_at: new Date().toISOString()
         });
 
