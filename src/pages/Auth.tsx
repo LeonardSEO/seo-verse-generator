@@ -38,8 +38,8 @@ export default function AuthPage() {
             variables: {
               default: {
                 colors: {
-                  brand: '#2563eb',
-                  brandAccent: '#1d4ed8',
+                  brand: '#4F46E5',
+                  brandAccent: '#4338CA',
                 }
               }
             }
@@ -47,7 +47,6 @@ export default function AuthPage() {
           providers={['github']}
           view="sign_in"
           showLinks={true}
-          magicLink={true}
           redirectTo={window.location.origin}
           socialLayout="horizontal"
         />
