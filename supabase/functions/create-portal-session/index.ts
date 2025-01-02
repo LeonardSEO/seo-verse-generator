@@ -5,17 +5,13 @@ import Stripe from 'https://esm.sh/stripe@12.0.0?target=deno'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { 
-      headers: {
-        ...corsHeaders,
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      }
-    })
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
@@ -34,6 +30,7 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
     
     if (userError || !user) {
+      console.error('Authentication error:', userError);
       throw new Error('Unauthorized')
     }
 

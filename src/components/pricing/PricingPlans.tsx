@@ -45,12 +45,21 @@ export const PricingPlans = ({ handleCheckout }: PricingPlansProps) => {
       }
 
       const { data, error } = await supabase.functions.invoke('create-portal-session', {
-        method: 'POST'
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
       });
       
       if (error) {
         console.error('Portal session error:', error);
-        throw error;
+        toast({
+          title: "Er is iets misgegaan",
+          description: "Kon geen verbinding maken met het klantportaal",
+          variant: "destructive",
+        });
+        return;
       }
       
       if (data?.url) {
