@@ -8,8 +8,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Settings, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
-import type { Json } from "@/integrations/supabase/types";
 
 interface Model {
   id: string;
@@ -19,13 +17,15 @@ interface Model {
   isFree: boolean;
 }
 
+interface SystemPrompts {
+  keywordResearch: string;
+  toneAnalysis: string;
+  contentGeneration: string;
+}
+
 interface Settings {
   models: Model[];
-  systemPrompts: {
-    keywordResearch: string;
-    toneAnalysis: string;
-    contentGeneration: string;
-  };
+  systemPrompts: SystemPrompts;
 }
 
 const defaultSettings: Settings = {
@@ -64,15 +64,14 @@ export default function AdminDashboard() {
       if (error) throw error;
       
       if (data?.settings) {
-        // Safely type cast the data
-        const settingsData = data.settings as Json;
+        const settingsData = data.settings as any;
         if (typeof settingsData === 'object' && settingsData !== null) {
           setSettings({
-            models: Array.isArray((settingsData as any).models) ? (settingsData as any).models : [],
+            models: Array.isArray(settingsData.models) ? settingsData.models : [],
             systemPrompts: {
-              keywordResearch: (settingsData as any).systemPrompts?.keywordResearch || '',
-              toneAnalysis: (settingsData as any).systemPrompts?.toneAnalysis || '',
-              contentGeneration: (settingsData as any).systemPrompts?.contentGeneration || ''
+              keywordResearch: settingsData.systemPrompts?.keywordResearch || '',
+              toneAnalysis: settingsData.systemPrompts?.toneAnalysis || '',
+              contentGeneration: settingsData.systemPrompts?.contentGeneration || ''
             }
           });
         }
@@ -96,7 +95,7 @@ export default function AdminDashboard() {
         .from('admin_settings')
         .upsert({ 
           id: 1, 
-          settings: settings as Json,
+          settings: settings as any,
           updated_at: new Date().toISOString()
         });
 
