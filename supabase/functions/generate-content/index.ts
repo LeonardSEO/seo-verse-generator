@@ -93,8 +93,6 @@ This page will be part of a broader content strategy aimed at linking pillar pag
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${Deno.env.get('OPENROUTER_API_KEY')}`,
-        'HTTP-Referer': 'https://contentai.app',
-        'X-Title': 'ContentAI'
       },
       body: JSON.stringify({
         model: model,
