@@ -39,8 +39,20 @@ export default function AdminDashboard() {
       if (error) throw error;
       
       if (data?.settings) {
-        const settingsData = data.settings as AdminSettings;
-        setSettings(settingsData);
+        // Cast to unknown first, then to AdminSettings to avoid type error
+        const settingsData = (data.settings as unknown) as AdminSettings;
+        
+        // Validate and set default values if needed
+        setSettings({
+          models: Array.isArray(settingsData.models) ? settingsData.models : [],
+          systemPrompts: {
+            keywordResearch: settingsData.systemPrompts?.keywordResearch || '',
+            toneAnalysis: settingsData.systemPrompts?.toneAnalysis || '',
+            contentGeneration: settingsData.systemPrompts?.contentGeneration || ''
+          },
+          defaultFreeModel: settingsData.defaultFreeModel || '',
+          defaultPremiumModel: settingsData.defaultPremiumModel || ''
+        });
       }
     } catch (error) {
       console.error('Error loading settings:', error);
