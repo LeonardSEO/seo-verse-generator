@@ -34,18 +34,6 @@ serve(async (req) => {
       throw new Error('Price ID is required')
     }
 
-    // Check if user already has an active subscription
-    const { data: subscriptions } = await supabaseClient
-      .from('subscriptions')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single()
-
-    if (subscriptions) {
-      throw new Error('User already has an active subscription')
-    }
-
     // Get or create customer
     const { data: customers } = await supabaseClient
       .from('customers')
@@ -53,14 +41,14 @@ serve(async (req) => {
       .eq('id', user.id)
       .single()
 
+    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
+      apiVersion: '2023-10-16',
+    })
+
     let customerId = customers?.stripe_customer_id
 
     if (!customerId) {
       // Create a new customer in Stripe
-      const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-        apiVersion: '2023-10-16',
-      })
-
       const customer = await stripe.customers.create({
         email: user.email,
         metadata: {
@@ -76,10 +64,6 @@ serve(async (req) => {
     }
 
     console.log('Creating checkout session...')
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
-      apiVersion: '2023-10-16',
-    })
-
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
