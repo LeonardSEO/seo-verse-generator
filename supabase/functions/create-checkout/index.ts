@@ -1,4 +1,4 @@
-import { serve } from 'https://deno.fresh.run/std@0.168.0/http/server.ts'
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import Stripe from 'https://esm.sh/stripe@12.0.0?target=deno'
 
@@ -8,6 +8,7 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -97,6 +98,7 @@ serve(async (req) => {
       }
     )
   } catch (error) {
+    console.error('Checkout error:', error)
     return new Response(
       JSON.stringify({ error: error.message }),
       {
