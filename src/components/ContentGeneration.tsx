@@ -7,26 +7,79 @@ import { findSitemapUrl, extractUrlsFromSitemap } from '../lib/sitemap';
 import { supabase } from "@/integrations/supabase/client";
 import { Copy, CheckCheck, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useNavigate } from 'react-router-dom';
+import { Label } from "@/components/ui/label";
 
 interface ContentGenerationProps {
   state: GeneratorState;
   updateState: (updates: Partial<GeneratorState>) => void;
 }
 
+interface Model {
+  id: string;
+  name: string;
+  description: string;
+  isFree: boolean;
+}
+
 interface AdminSettings {
   settings: {
-    defaultModel: string;
+    models: Model[];
+    defaultFreeModel: string;
+    defaultPremiumModel: string;
   };
 }
 
 export function ContentGeneration({ state, updateState }: ContentGenerationProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [models, setModels] = useState<Model[]>([]);
+  const [selectedModel, setSelectedModel] = useState<string>('');
+  const [isPremium, setIsPremium] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    loadModels();
+    checkSubscription();
+  }, []);
+
+  const checkSubscription = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    const { data: subscription } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', session.user.id)
+      .eq('status', 'active')
+      .single();
+
+    setIsPremium(!!subscription);
+  };
+
+  const loadModels = async () => {
+    try {
+      const { data: adminSettings } = await supabase
+        .from('admin_settings')
+        .select('settings')
+        .single();
+
+      if (adminSettings?.settings) {
+        const settings = (adminSettings.settings as AdminSettings['settings']);
+        setModels(settings.models || []);
+        
+        // Set default model based on subscription status
+        const defaultModel = isPremium ? settings.defaultPremiumModel : settings.defaultFreeModel;
+        setSelectedModel(defaultModel);
+      }
+    } catch (error) {
+      console.error('Error loading models:', error);
+    }
+  };
 
   const handleCopy = async () => {
     if (state.generatedContent) {
@@ -42,6 +95,10 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
 
   const handleBack = () => {
     updateState({ currentStep: 'tone' });
+  };
+
+  const handleModelChange = (modelId: string) => {
+    setSelectedModel(modelId);
   };
 
   const handleGenerate = async () => {
@@ -61,6 +118,15 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
       toast({
         title: "Fout",
         description: "Voer eerst een keyword en website URL in",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!selectedModel) {
+      toast({
+        title: "Fout",
+        description: "Selecteer eerst een model",
         variant: "destructive",
       });
       return;
@@ -87,14 +153,6 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
         throw new Error("Authenticatie verlopen. Log opnieuw in.");
       }
 
-      // Finally generate content using OpenRouter
-      const { data: adminSettings } = await supabase
-        .from('admin_settings')
-        .select('settings')
-        .single();
-
-      const settings = (adminSettings?.settings as AdminSettings['settings']) || { defaultModel: 'gpt-4' };
-
       const { data, error } = await supabase.functions.invoke('generate-content', {
         body: { 
           state: {
@@ -102,7 +160,7 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
             selectedUrls: urls,
             research
           },
-          model: settings.defaultModel
+          model: selectedModel
         }
       });
 
@@ -145,6 +203,59 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
         </div>
       </div>
 
+      <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <h3 className="text-lg font-medium mb-4">Selecteer een AI Model</h3>
+        <div className="space-y-4">
+          <RadioGroup
+            value={selectedModel}
+            onValueChange={handleModelChange}
+            className="gap-4"
+          >
+            {models.map((model) => {
+              const isDisabled = !model.isFree && !isPremium;
+              return (
+                <div
+                  key={model.id}
+                  className={`flex items-start space-x-3 p-4 rounded-lg border ${
+                    isDisabled ? 'opacity-50 bg-gray-50' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  <RadioGroupItem
+                    value={model.id}
+                    id={model.id}
+                    disabled={isDisabled}
+                  />
+                  <div className="flex-1">
+                    <Label
+                      htmlFor={model.id}
+                      className={`block font-medium ${
+                        isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
+                      }`}
+                    >
+                      {model.name}
+                      {!model.isFree && (
+                        <span className="ml-2 text-sm text-primary">Premium</span>
+                      )}
+                    </Label>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {model.description}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </RadioGroup>
+          {!isPremium && (
+            <p className="text-sm text-gray-500 italic">
+              Premium modellen zijn alleen beschikbaar voor premium gebruikers.{' '}
+              <a href="/settings" className="text-primary hover:underline">
+                Upgrade nu
+              </a>
+            </p>
+          )}
+        </div>
+      </div>
+
       <div className="space-y-4">
         <button
           onClick={handleGenerate}
@@ -181,11 +292,9 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
               <ReactMarkdown 
                 remarkPlugins={[remarkGfm]}
                 components={{
-                  // Override heading rendering to ensure proper styling
                   h1: ({node, ...props}) => <h1 className="text-4xl font-bold mb-6" {...props} />,
                   h2: ({node, ...props}) => <h2 className="text-3xl font-semibold mb-4" {...props} />,
                   h3: ({node, ...props}) => <h3 className="text-2xl font-semibold mb-3" {...props} />,
-                  // Make links stand out more
                   a: ({node, ...props}) => <a className="text-blue-600 hover:text-blue-800 underline" {...props} />,
                 }}
               >
