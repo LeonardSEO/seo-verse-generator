@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import LoadingSpinner from '@/components/LoadingSpinner';
-import { Upload } from 'lucide-react';
+import { Upload, ArrowLeft } from 'lucide-react';
 
 export default function Settings() {
   const [loading, setLoading] = useState(true);
@@ -33,6 +33,10 @@ export default function Settings() {
 
     checkAuth();
   }, [navigate]);
+
+  const handleBack = () => {
+    navigate(-1);
+  };
 
   const uploadAvatar = async (event: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -120,7 +124,17 @@ export default function Settings() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white p-6">
       <div className="max-w-2xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold">Account Instellingen</h1>
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleBack}
+            className="h-8 w-8"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <h1 className="text-3xl font-bold">Account Instellingen</h1>
+        </div>
         
         <Card>
           <CardHeader>
