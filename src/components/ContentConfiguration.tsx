@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -11,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { GeneratorState, ContentType } from '../lib/types';
+import { ArrowLeft } from 'lucide-react';
 
 interface ContentConfigurationProps {
   state: GeneratorState;
@@ -46,6 +48,10 @@ export function ContentConfiguration({ state, updateState }: ContentConfiguratio
     return true;
   };
 
+  const handleBack = () => {
+    updateState({ currentStep: 'keyword' });
+  };
+
   const handleInputChange = (field: keyof typeof state.businessInfo, value: string) => {
     updateState({
       businessInfo: {
@@ -55,13 +61,30 @@ export function ContentConfiguration({ state, updateState }: ContentConfiguratio
     });
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      validateAndProceed();
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-semibold">Bedrijfsinformatie</h2>
-        <p className="text-gray-600">
-          Vul de informatie over uw bedrijf in om de content te personaliseren
-        </p>
+      <div className="flex items-center gap-4 mb-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleBack}
+          className="h-8 w-8"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-semibold">Bedrijfsinformatie</h2>
+          <p className="text-gray-600">
+            Vul de informatie over uw bedrijf in om de content te personaliseren
+          </p>
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -71,6 +94,7 @@ export function ContentConfiguration({ state, updateState }: ContentConfiguratio
             id="businessName"
             value={state.businessInfo.name}
             onChange={(e) => handleInputChange('name', e.target.value)}
+            onKeyPress={handleKeyPress}
             placeholder="Uw bedrijfsnaam"
           />
         </div>
@@ -81,6 +105,7 @@ export function ContentConfiguration({ state, updateState }: ContentConfiguratio
             id="businessType"
             value={state.businessInfo.type}
             onChange={(e) => handleInputChange('type', e.target.value)}
+            onKeyPress={handleKeyPress}
             placeholder="Bijv. E-commerce, Dienstverlening, etc."
           />
         </div>
@@ -91,6 +116,7 @@ export function ContentConfiguration({ state, updateState }: ContentConfiguratio
             id="businessDescription"
             value={state.businessInfo.description}
             onChange={(e) => handleInputChange('description', e.target.value)}
+            onKeyPress={handleKeyPress}
             placeholder="Beschrijf kort waar uw bedrijf zich mee bezig houdt"
             className="min-h-[100px]"
           />
@@ -115,12 +141,12 @@ export function ContentConfiguration({ state, updateState }: ContentConfiguratio
           </Select>
         </div>
 
-        <button
+        <Button
           onClick={validateAndProceed}
-          className="w-full bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary/90 transition-colors"
+          className="w-full"
         >
           Volgende Stap
-        </button>
+        </Button>
       </div>
     </div>
   );

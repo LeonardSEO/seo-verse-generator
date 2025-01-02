@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import LoadingSpinner from './LoadingSpinner';
-import { Lock } from 'lucide-react';
+import { Lock, ArrowLeft } from 'lucide-react';
 import { supabase } from "@/integrations/supabase/client";
 
 interface ToneAnalysisProps {
@@ -71,13 +71,34 @@ export function ToneAnalysis({ state, updateState, isPremium }: ToneAnalysisProp
     updateState({ currentStep: 'content' });
   };
 
+  const handleBack = () => {
+    updateState({ currentStep: 'business' });
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && state.toneOfVoice) {
+      e.preventDefault();
+      handleNext();
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-semibold">Tone of Voice</h2>
-        <p className="text-gray-600">
-          Beschrijf de gewenste schrijfstijl voor uw content
-        </p>
+      <div className="flex items-center gap-4 mb-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleBack}
+          className="h-8 w-8"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-semibold">Tone of Voice</h2>
+          <p className="text-gray-600">
+            Beschrijf de gewenste schrijfstijl voor uw content
+          </p>
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -87,6 +108,7 @@ export function ToneAnalysis({ state, updateState, isPremium }: ToneAnalysisProp
             id="toneOfVoice"
             value={state.toneOfVoice}
             onChange={(e) => updateState({ toneOfVoice: e.target.value })}
+            onKeyPress={handleKeyPress}
             placeholder="Bijvoorbeeld: Professioneel en zakelijk, maar toegankelijk en vriendelijk"
             className="min-h-[100px]"
           />

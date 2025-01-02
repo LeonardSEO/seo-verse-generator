@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { GeneratorState } from '../lib/types';
 import { useToast } from "@/components/ui/use-toast";
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface WebsiteAnalysisProps {
@@ -50,6 +50,13 @@ export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
     });
   };
 
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleUrlSubmit();
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -71,6 +78,7 @@ export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
           placeholder="https://www.voorbeeld.nl"
           value={urlInput}
           onChange={(e) => setUrlInput(e.target.value)}
+          onKeyPress={handleKeyPress}
           className="font-mono text-sm"
         />
 

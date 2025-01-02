@@ -5,7 +5,7 @@ import LoadingSpinner from './LoadingSpinner';
 import { researchKeyword } from '../lib/research';
 import { findSitemapUrl, extractUrlsFromSitemap } from '../lib/sitemap';
 import { supabase } from "@/integrations/supabase/client";
-import { Copy, CheckCheck } from 'lucide-react';
+import { Copy, CheckCheck, ArrowLeft } from 'lucide-react';
 import { Button } from './ui/button';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -38,6 +38,10 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
       });
       setTimeout(() => setIsCopied(false), 2000);
     }
+  };
+
+  const handleBack = () => {
+    updateState({ currentStep: 'tone' });
   };
 
   const handleGenerate = async () => {
@@ -124,11 +128,21 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <h2 className="text-2xl font-semibold">Content Generatie</h2>
-        <p className="text-gray-600">
-          Genereer uw content op basis van de ingevoerde informatie
-        </p>
+      <div className="flex items-center gap-4 mb-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleBack}
+          className="h-8 w-8"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-semibold">Content Generatie</h2>
+          <p className="text-gray-600">
+            Genereer uw content op basis van de ingevoerde informatie
+          </p>
+        </div>
       </div>
 
       <div className="space-y-4">
