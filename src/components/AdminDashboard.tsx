@@ -12,9 +12,9 @@ import { useNavigate } from 'react-router-dom';
 const defaultSettings: AdminSettings = {
   models: [],
   systemPrompts: {
-    keywordResearch: '',
-    toneAnalysis: '',
-    contentGeneration: ''
+    keywordResearch: `Find highly specific generalised data about the Dutch keyword. Do not name the source, webshops or brand other than the keyword!`,
+    toneAnalysis: `Analyze the tone and style of the provided text. Focus on identifying key emotional elements, writing style, and overall communication approach.`,
+    contentGeneration: `Generate high-quality, engaging content based on the provided topic and requirements. Ensure the content is original, informative, and matches the specified tone and style.`
   },
   defaultFreeModel: '',
   defaultPremiumModel: ''
@@ -74,9 +74,9 @@ export default function AdminDashboard() {
         setSettings({
           models: Array.isArray(settingsData.models) ? settingsData.models : [],
           systemPrompts: {
-            keywordResearch: settingsData.systemPrompts?.keywordResearch || '',
-            toneAnalysis: settingsData.systemPrompts?.toneAnalysis || '',
-            contentGeneration: settingsData.systemPrompts?.contentGeneration || ''
+            keywordResearch: settingsData.systemPrompts?.keywordResearch || defaultSettings.systemPrompts.keywordResearch,
+            toneAnalysis: settingsData.systemPrompts?.toneAnalysis || defaultSettings.systemPrompts.toneAnalysis,
+            contentGeneration: settingsData.systemPrompts?.contentGeneration || defaultSettings.systemPrompts.contentGeneration
           },
           defaultFreeModel: settingsData.defaultFreeModel || '',
           defaultPremiumModel: settingsData.defaultPremiumModel || ''
