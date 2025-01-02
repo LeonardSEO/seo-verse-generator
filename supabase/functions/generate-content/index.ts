@@ -21,11 +21,11 @@ serve(async (req) => {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${Deno.env.get('OPENROUTER_API_KEY')}`,
-        'HTTP-Referer': 'https://lovable.dev',
-        'X-Title': 'Nederlandse Content Generator'
+        'HTTP-Referer': 'https://contentai.app',
+        'X-Title': 'ContentAI'
       },
       body: JSON.stringify({
-        model: model || 'gpt-4o-mini',
+        model: model,
         messages: [
           {
             role: "system",
@@ -35,6 +35,11 @@ serve(async (req) => {
               
               # Task
               Compose a compelling 1500-word SEO-friendly ${state.contentType} that includes at least multiple internal links to other ${state.businessInfo.name} pages, and all links must be drawn from the following internal links: "${state.selectedUrls.join(', ')}".
+              - Begin with a catchy, clickbait H1 title of 60 characters, followed by H2 and H3 headers for subdivision.
+              - ENSURE that each paragraph is enriched with formatting elements such as tables, headers, lists, images, and use italics, quotes, and bold text for emphasis.
+              - Integrate internal links for navigation, using each link only once and ensuring they are logically placed and keyword-rich.
+              - Do NOT engage in conversation; focus solely on writing content until the final generation of the article.
+              - Ensure the content remains unique across sections and does not repeat itself. Internal links should NEVER be reused.
               
               ## Specifics
               1. Content Guidelines:
@@ -52,13 +57,31 @@ serve(async (req) => {
               3. Tone and Style:
                  - Follow the tone provided in adhering to the tone specified: ${state.toneOfVoice}.
                  - Write in a clear, concise manner appropriate for the target audience, avoiding overly complex language.
+              
+              ## Context
+              This task is essential for strengthening ${state.businessInfo.name}'s online presence in ${state.businessInfo.country}. The goal is to produce an informative, visually appealing ${state.contentType} that increases site traffic and improves the overall search engine ranking.
+              
+              ###About the Business:
+              ${state.businessInfo.name} specializes in ${state.businessInfo.type}, offering innovative solutions in ${state.businessInfo.country}.
+              
+              ###Our System:
+              This page will be part of a broader content strategy aimed at linking pillar pages to provide comprehensive resources and enhance the website's information architecture. The content must be optimized for the keyword: "${state.mainKeyword}", ensuring alignment with SEO and user engagement goals.
+              
+              ## Notes
+              - Ensure that all external links are avoided, and internal linking to relevant pages is prioritized.
+              - Each section should flow logically
+              - Conclude the page with a call to action that leads visitors to explore more of ${state.businessInfo.name}'s offerings.
+              - Ensure all content is relevant to the keyword: "${state.mainKeyword}" and supports the findings from ${state.research}.
             `
           },
           {
             role: "user",
             content: "Generate the content following the above instructions."
           }
-        ]
+        ],
+        temperature: 0.3,
+        top_p: 0.95,
+        repetition_penalty: 1
       })
     });
 
