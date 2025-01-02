@@ -8,6 +8,16 @@ export default function AuthPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Check if user is already logged in
+    const checkUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        navigate('/');
+      }
+    };
+    checkUser();
+
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN') {
         navigate('/');
@@ -37,7 +47,6 @@ export default function AuthPage() {
           providers={['github']}
           view="sign_in"
           showLinks={true}
-          magicLink={true}
           redirectTo={window.location.origin}
           socialLayout="horizontal"
         />
