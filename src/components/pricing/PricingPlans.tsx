@@ -44,9 +44,15 @@ export const PricingPlans = ({ handleCheckout }: PricingPlansProps) => {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('create-portal-session');
+      const { data, error } = await supabase.functions.invoke('create-portal-session', {
+        method: 'POST'
+      });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Portal session error:', error);
+        throw error;
+      }
+      
       if (data?.url) {
         window.location.href = data.url;
       }

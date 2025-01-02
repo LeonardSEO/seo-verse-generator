@@ -1,5 +1,5 @@
 # A string used to distinguish different Supabase projects on the same host. Defaults to the project ID.
 project_id = "gcfxamobzohveytqhkbg"
 
-[functions.create-checkout]
+[functions.create-portal-session]
 verify_jwt = true

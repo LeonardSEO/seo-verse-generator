@@ -8,11 +8,18 @@ const corsHeaders = {
 }
 
 serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders })
+    return new Response(null, { 
+      headers: {
+        ...corsHeaders,
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      }
+    })
   }
 
   try {
+    // Create Supabase client with proper authorization
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -23,31 +30,46 @@ serve(async (req) => {
       }
     )
 
+    // Get authenticated user
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
     
     if (userError || !user) {
       throw new Error('Unauthorized')
     }
 
-    // Get the customer's stripe_customer_id
+    console.log('Authenticated user:', user.id);
+
+    // Get customer's stripe_customer_id
     const { data: customer, error: customerError } = await supabaseClient
       .from('customers')
       .select('stripe_customer_id')
       .eq('id', user.id)
       .single()
 
-    if (customerError || !customer?.stripe_customer_id) {
-      throw new Error('No customer found')
+    if (customerError) {
+      console.error('Customer fetch error:', customerError);
+      throw new Error('Error fetching customer');
     }
 
+    if (!customer?.stripe_customer_id) {
+      console.error('No stripe_customer_id found for user:', user.id);
+      throw new Error('No customer found');
+    }
+
+    console.log('Found customer:', customer.stripe_customer_id);
+
+    // Initialize Stripe
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2023-10-16',
     })
 
+    // Create portal session
     const { url } = await stripe.billingPortal.sessions.create({
       customer: customer.stripe_customer_id,
       return_url: `${req.headers.get('origin')}/settings`,
     })
+
+    console.log('Created portal session with URL:', url);
 
     return new Response(
       JSON.stringify({ url }),
@@ -57,6 +79,7 @@ serve(async (req) => {
       }
     )
   } catch (error) {
+    console.error('Portal session error:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
