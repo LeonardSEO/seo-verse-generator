@@ -104,6 +104,7 @@ This page will be part of a broader content strategy aimed at linking pillar pag
           }
         ],
         temperature: 0.3,
+        max_tokens: 4096,
         top_p: 0.95,
         repetition_penalty: 1
       })
