@@ -34,6 +34,7 @@ export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
       return;
     }
 
+    // Validate URL format
     if (!isValidUrl(urlInput)) {
       toast({
         title: "Fout",
@@ -43,12 +44,24 @@ export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
       return;
     }
 
+    // Normalize URL (add https:// if missing)
     const validUrl = urlInput.startsWith('http') ? urlInput : `https://${urlInput}`;
-    updateState({ 
-      selectedUrls: [validUrl],
-      websiteUrl: validUrl,
-      currentStep: 'keyword'
-    });
+
+    // Check if URL is accessible
+    fetch(validUrl, { mode: 'no-cors' })
+      .then(() => {
+        updateState({ 
+          websiteUrl: validUrl,
+          currentStep: 'keyword'
+        });
+      })
+      .catch(() => {
+        toast({
+          title: "Fout",
+          description: "Deze website is niet bereikbaar. Controleer de URL en probeer het opnieuw.",
+          variant: "destructive",
+        });
+      });
   };
 
   return (
@@ -82,11 +95,11 @@ export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
           Website URL Toevoegen
         </Button>
 
-        {state.selectedUrls.length > 0 && (
+        {state.websiteUrl && (
           <div className="mt-4 p-4 bg-gray-50 rounded-lg">
             <h3 className="text-sm font-medium mb-2">Geselecteerde website</h3>
             <div className="text-sm text-gray-600 py-1 truncate">
-              {state.selectedUrls[0]}
+              {state.websiteUrl}
             </div>
           </div>
         )}

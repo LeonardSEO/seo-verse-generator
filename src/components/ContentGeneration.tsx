@@ -14,11 +14,6 @@ interface ContentGenerationProps {
 interface AdminSettings {
   settings: {
     defaultModel: string;
-    systemPrompts: {
-      keywordResearch: string;
-      toneAnalysis: string;
-      contentGeneration: string;
-    };
   };
 }
 
@@ -57,8 +52,7 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
         .select('settings')
         .single();
 
-      const settings = (adminSettings?.settings as AdminSettings['settings']) || { defaultModel: 'gpt-4o-mini' };
-      const selectedModel = settings.defaultModel;
+      const settings = (adminSettings?.settings as AdminSettings['settings']) || { defaultModel: 'gpt-4' };
 
       const { data, error } = await supabase.functions.invoke('generate-content', {
         body: { 
@@ -67,7 +61,7 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
             selectedUrls: urls,
             research
           },
-          model: selectedModel
+          model: settings.defaultModel
         }
       });
 
