@@ -17,8 +17,8 @@ export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
 
   const isValidUrl = (url: string) => {
     try {
-      new URL(url.startsWith('http') ? url : `https://${url}`);
-      return true;
+      const urlObj = new URL(url.startsWith('http') ? url : `https://${url}`);
+      return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
     } catch {
       return false;
     }
@@ -47,21 +47,11 @@ export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
     // Normalize URL (add https:// if missing)
     const validUrl = urlInput.startsWith('http') ? urlInput : `https://${urlInput}`;
 
-    // Check if URL is accessible
-    fetch(validUrl, { mode: 'no-cors' })
-      .then(() => {
-        updateState({ 
-          websiteUrl: validUrl,
-          currentStep: 'keyword'
-        });
-      })
-      .catch(() => {
-        toast({
-          title: "Fout",
-          description: "Deze website is niet bereikbaar. Controleer de URL en probeer het opnieuw.",
-          variant: "destructive",
-        });
-      });
+    // Update state without trying to fetch the URL
+    updateState({ 
+      websiteUrl: validUrl,
+      currentStep: 'keyword'
+    });
   };
 
   return (
