@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export async function findSitemapUrl(websiteUrl: string): Promise<string | null> {
   try {
     const { data, error } = await supabase.functions.invoke('fetch-sitemap', {

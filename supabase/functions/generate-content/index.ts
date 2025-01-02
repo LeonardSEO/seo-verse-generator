@@ -1,32 +1,20 @@
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { corsHeaders } from '../_shared/cors.ts'
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
-interface RequestBody {
-  state: {
-    businessInfo: {
-      name: string;
-      type: string;
-      country: string;
-      description: string;
-    };
-    mainKeyword: string;
-    research: string;
-    selectedUrls: string[];
-    toneOfVoice: string;
-    contentType: string;
-  };
-  model: string;
-}
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { state, model } = await req.json() as RequestBody
+    const { state, model } = await req.json();
+    console.log('Received request with state:', state);
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -37,7 +25,7 @@ serve(async (req) => {
         'X-Title': 'Nederlandse Content Generator'
       },
       body: JSON.stringify({
-        model: model,
+        model: model || 'gpt-4o-mini',
         messages: [
           {
             role: "system",
@@ -64,21 +52,6 @@ serve(async (req) => {
               3. Tone and Style:
                  - Follow the tone provided in adhering to the tone specified: ${state.toneOfVoice}.
                  - Write in a clear, concise manner appropriate for the target audience, avoiding overly complex language.
-              
-              ## Context
-              This task is essential for strengthening ${state.businessInfo.name}'s online presence in ${state.businessInfo.country}. The goal is to produce an informative, visually appealing ${state.contentType} that increases site traffic and improves the overall search engine ranking.
-              
-              ###About the Business:
-              ${state.businessInfo.name} specializes in ${state.businessInfo.type}, offering innovative solutions in ${state.businessInfo.country}.
-              
-              ###Our System:
-              This page will be part of a broader content strategy aimed at linking pillar pages to provide comprehensive resources and enhance the website's information architecture. The content must be optimized for the keyword: "${state.mainKeyword}", ensuring alignment with SEO and user engagement goals.
-              
-              ## Notes
-              - Ensure that all external links are avoided, and internal linking to relevant pages is prioritized.
-              - Each section should flow logically
-              - Conclude the page with a call to action that leads visitors to explore more of ${state.businessInfo.name}'s offerings.
-              - Ensure all content is relevant to the keyword: "${state.mainKeyword}" and supports the findings from ${state.research}.
             `
           },
           {
@@ -87,26 +60,26 @@ serve(async (req) => {
           }
         ]
       })
-    })
+    });
 
-    const data = await response.json()
-    const generatedContent = data.choices[0].message.content
+    const data = await response.json();
+    console.log('Received response from OpenRouter:', data);
 
     return new Response(
-      JSON.stringify({ content: generatedContent }),
+      JSON.stringify({ content: data.choices[0].message.content }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       },
-    )
+    );
   } catch (error) {
-    console.error('Error:', error)
+    console.error('Error in generate-content function:', error);
     return new Response(
       JSON.stringify({ error: error.message }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,
       },
-    )
+    );
   }
-})
+});
