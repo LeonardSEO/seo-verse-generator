@@ -3,6 +3,8 @@ import { GeneratorState } from '../lib/types';
 import { useToast } from "@/hooks/use-toast";
 import LoadingSpinner from './LoadingSpinner';
 import { researchKeyword } from '../lib/research';
+import { findSitemapUrl, extractUrlsFromSitemap } from '../lib/sitemap';
+import { supabase } from "@/integrations/supabase/client";
 
 interface ContentGenerationProps {
   state: GeneratorState;
@@ -14,10 +16,10 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
   const { toast } = useToast();
 
   const handleGenerate = async () => {
-    if (!state.mainKeyword) {
+    if (!state.mainKeyword || !state.websiteUrl) {
       toast({
         title: "Fout",
-        description: "Voer eerst een keyword in",
+        description: "Voer eerst een keyword en website URL in",
         variant: "destructive",
       });
       return;
@@ -25,14 +27,45 @@ export function ContentGeneration({ state, updateState }: ContentGenerationProps
 
     setIsGenerating(true);
     try {
-      // First perform keyword research
+      // First analyze the website and get sitemap URLs
+      const sitemapUrl = await findSitemapUrl(state.websiteUrl);
+      let urls: string[] = [];
+      
+      if (sitemapUrl) {
+        urls = await extractUrlsFromSitemap(sitemapUrl);
+        updateState({ selectedUrls: urls });
+      }
+
+      // Then perform keyword research
       const research = await researchKeyword(state.mainKeyword);
       updateState({ research });
 
-      // TODO: Implement content generation logic using the research results
-      toast({
-        description: "Content is gegenereerd",
+      // Finally generate content using OpenRouter
+      const { data: adminSettings } = await supabase
+        .from('admin_settings')
+        .select('settings')
+        .single();
+
+      const selectedModel = adminSettings?.settings?.selectedModel || 'gpt-4';
+
+      const { data, error } = await supabase.functions.invoke('generate-content', {
+        body: { 
+          state: {
+            ...state,
+            selectedUrls: urls,
+            research
+          },
+          model: selectedModel
+        }
       });
+
+      if (error) throw error;
+
+      updateState({ 
+        generatedContent: data.content,
+        selectedUrls: urls
+      });
+
     } catch (error) {
       console.error('Error:', error);
       toast({

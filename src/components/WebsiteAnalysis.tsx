@@ -3,7 +3,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { GeneratorState } from '../lib/types';
 import { useToast } from "@/components/ui/use-toast";
-import LoadingSpinner from './LoadingSpinner';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -13,11 +12,19 @@ interface WebsiteAnalysisProps {
 }
 
 export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [urlInput, setUrlInput] = useState('');
   const { toast } = useToast();
 
-  const handleUrlSubmit = async () => {
+  const isValidUrl = (url: string) => {
+    try {
+      new URL(url.startsWith('http') ? url : `https://${url}`);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleUrlSubmit = () => {
     if (!urlInput.trim()) {
       toast({
         title: "Fout",
@@ -27,9 +34,7 @@ export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
       return;
     }
 
-    try {
-      new URL(urlInput.startsWith('http') ? urlInput : `https://${urlInput}`);
-    } catch {
+    if (!isValidUrl(urlInput)) {
       toast({
         title: "Fout",
         description: "Voer een geldige URL in (bijvoorbeeld: https://voorbeeld.nl)",
@@ -39,16 +44,10 @@ export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
     }
 
     const validUrl = urlInput.startsWith('http') ? urlInput : `https://${urlInput}`;
-    
     updateState({ 
       selectedUrls: [validUrl],
       websiteUrl: validUrl,
       currentStep: 'keyword'
-    });
-    
-    toast({
-      title: "Success",
-      description: "Website URL toegevoegd",
     });
   };
 
@@ -78,10 +77,9 @@ export function WebsiteAnalysis({ state, updateState }: WebsiteAnalysisProps) {
 
         <Button
           onClick={handleUrlSubmit}
-          disabled={isAnalyzing}
           className="w-full"
         >
-          {isAnalyzing ? <LoadingSpinner /> : "Website Analyseren"}
+          Website URL Toevoegen
         </Button>
 
         {state.selectedUrls.length > 0 && (
