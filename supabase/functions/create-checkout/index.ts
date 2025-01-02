@@ -26,7 +26,13 @@ serve(async (req) => {
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
     
     if (userError || !user) {
+      console.error('Auth error:', userError)
       throw new Error('Unauthorized')
+    }
+
+    if (!user.email) {
+      console.error('No email found for user:', user.id)
+      throw new Error('User email is required')
     }
 
     const { priceId } = await req.json()
@@ -35,47 +41,67 @@ serve(async (req) => {
       throw new Error('Price ID is required')
     }
 
+    console.log('Initializing Stripe...')
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') || '', {
       apiVersion: '2023-10-16',
     })
 
-    // First check if customer exists
-    const { data: existingCustomer } = await supabaseClient
+    // First check if customer exists in our database
+    console.log('Checking for existing customer in database...')
+    const { data: existingCustomer, error: customerError } = await supabaseClient
       .from('customers')
       .select('stripe_customer_id')
       .eq('id', user.id)
       .maybeSingle()
 
+    if (customerError) {
+      console.error('Error fetching customer from database:', customerError)
+      throw new Error('Failed to check existing customer')
+    }
+
     let customerId = existingCustomer?.stripe_customer_id
 
     if (!customerId) {
-      console.log('Creating new Stripe customer for user:', user.id)
+      console.log('No existing customer found, checking Stripe for existing customer with email:', user.email)
       
-      try {
-        // Create a new customer in Stripe
-        const customer = await stripe.customers.create({
-          email: user.email,
-          metadata: {
-            supabase_user_id: user.id,
-          },
-        })
-        customerId = customer.id
+      // Check if customer already exists in Stripe
+      const existingStripeCustomers = await stripe.customers.list({
+        email: user.email,
+        limit: 1,
+      })
 
-        // Store the customer ID in Supabase
-        const { error: insertError } = await supabaseClient
-          .from('customers')
-          .insert([{ 
-            id: user.id, 
-            stripe_customer_id: customerId 
-          }])
-
-        if (insertError) {
-          console.error('Error inserting customer:', insertError)
-          throw new Error(`Failed to save customer: ${insertError.message}`)
+      if (existingStripeCustomers.data.length > 0) {
+        console.log('Found existing Stripe customer')
+        customerId = existingStripeCustomers.data[0].id
+      } else {
+        console.log('Creating new Stripe customer...')
+        try {
+          const customer = await stripe.customers.create({
+            email: user.email,
+            metadata: {
+              supabase_user_id: user.id,
+            },
+          })
+          customerId = customer.id
+          console.log('Stripe customer created successfully:', customerId)
+        } catch (stripeError) {
+          console.error('Stripe customer creation error:', stripeError)
+          throw new Error(`Failed to create Stripe customer: ${stripeError.message}`)
         }
-      } catch (stripeError) {
-        console.error('Stripe customer creation error:', stripeError)
-        throw new Error('Failed to create Stripe customer')
+      }
+
+      // Store the customer ID in our database
+      console.log('Saving customer ID to database...')
+      const { error: insertError } = await supabaseClient
+        .from('customers')
+        .insert([{ 
+          id: user.id, 
+          stripe_customer_id: customerId 
+        }])
+
+      if (insertError) {
+        console.error('Error saving customer to database:', insertError)
+        throw new Error(`Failed to save customer to database: ${insertError.message}`)
       }
     }
 
